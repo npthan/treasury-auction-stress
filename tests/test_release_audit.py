@@ -571,10 +571,10 @@ def test_current_repository_tree_passes_the_full_audit():
 
 
 def test_a_private_email_reintroduced_into_pyproject_toml_would_fail_the_audit():
-    """Regression guard for the exact defect this review removed: if a
-    real-shaped email address were ever reintroduced into pyproject.toml
-    (or any other tracked file), the current-tree audit must fail, never
-    silently pass because the file is a project-metadata/authors file."""
+    """Regression guard: if a real-shaped email address were ever
+    reintroduced into pyproject.toml (or any other tracked file), the
+    current-tree audit must fail, never silently pass because the file
+    is a project-metadata/authors file."""
     content = 'authors = [{ name = "Nathan Yang", email = "someone@example.test" }]\n'
     result = audit_tree([("pyproject.toml", content)])
     assert result.passed is False
@@ -583,8 +583,8 @@ def test_a_private_email_reintroduced_into_pyproject_toml_would_fail_the_audit()
 
 def test_a_local_home_path_reintroduced_into_any_file_would_fail_the_audit():
     """Regression guard: a local /Users/... or /home/... path in any
-    tracked file must fail the audit -- proven generically, not only for
-    the one file this review fixed."""
+    tracked file must fail the audit -- proven generically, for any
+    tracked path."""
     content = "ran from /Users/exampleuser/Projects/repo/.venv/bin/python3\n"
     result = audit_tree([("reports/some_future_report.md", content)])
     assert result.passed is False

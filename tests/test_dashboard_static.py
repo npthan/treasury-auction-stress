@@ -177,13 +177,12 @@ def test_table_scroll_hint_present_and_narrow_screen_only():
 
 
 # ============================================================
-# Phase 9 acceptance-review remediation: the NY Fed's Terms of Use
-# condition redistribution of NY Fed content on including their
-# suggested copyright/source-identifier line, in their suggested
-# format, without implying endorsement. This dashboard page republishes
-# derived/aggregated NY Fed Primary Dealer Statistics figures, so its
-# footer must carry that line. See docs/data_sources_and_licensing.md
-# Section 2 for the source terms as fetched live during this review.
+# The NY Fed's Terms of Use condition redistribution of NY Fed content
+# on including their suggested copyright/source-identifier line, in
+# their suggested format, without implying endorsement. This dashboard
+# page republishes derived/aggregated NY Fed Primary Dealer Statistics
+# figures, so its footer must carry that line. See
+# docs/data_sources_and_licensing.md Section 2 for the recorded terms.
 # ============================================================
 
 

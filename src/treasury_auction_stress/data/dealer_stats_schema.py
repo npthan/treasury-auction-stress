@@ -43,7 +43,7 @@ rule. Sources: `https://www.federalreserve.gov/apps/reportingforms/Report/Index/
 - List all currently active series: `GET
   https://markets.newyorkfed.org/api/pd/list/timeseries.json` -- no
   auth required (verified: a plain unauthenticated request succeeds).
-  Every entry as of this session carries `seriesbreak: "SBN2024"`
+  Every entry at the last verified pull carries `seriesbreak: "SBN2024"`
   (the API's own internal series-break tag for its *current* code
   set), plus a `keyid` and a free-text `description`.
 - Fetch one series' full history: `GET
@@ -134,7 +134,7 @@ SECURITIES (TIPS) DEALER TRANSACTIONS WITH OTHERS" -- i.e. its own
 label claims to be a TIPS-only total, but its **naming pattern**
 (`...GST-TOT`, parallel to `PDPOSGST-TOT`, the verified excl-TIPS
 position total) and its **value level** (~$873B avg over the last 10
-observations in this session, vs. ~$23B for `PDTIPSTOT`, the
+verified observations, vs. ~$23B for `PDTIPSTOT`, the
 unambiguously-named TIPS transactions total, and ~$847B for
 `PDGSWOEXTTOT`, the correctly-named excl-TIPS transactions total)
 together suggest -- **but do not prove** -- that it may actually carry

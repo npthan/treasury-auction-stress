@@ -4,7 +4,7 @@ Every function here is called both by `tests/test_feature_matrix.py`
 (so a genuine regression fails the test suite) and by
 `treasury_auction_stress.features.feature_matrix_cli` when it
 regenerates `artifacts/phase_5_leakage_audit.md` -- the report always
-reflects checks that were actually run this session, never a hand-typed
+reflects checks that were actually run, never a hand-typed
 claim, per `docs/project_rules.md`'s "no fabricated results" rule.
 """
 

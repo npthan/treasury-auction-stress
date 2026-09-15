@@ -1,18 +1,13 @@
 # Phase 7 protocol -- the single machine-readable source of truth for
 # the restrained set of adaptive/probabilistic comparisons this phase
-# runs. Written to the working tree BEFORE any Phase 7 model was fit or
-# scored -- but, as of that writing and as of every acceptance-review
-# pass, this file is UNTRACKED (`git status` shows it with `??`, never
-# staged or committed). "Frozen before scoring" describes the ORDER OF
-# OPERATIONS in this working tree during this session, not a git-commit
-# timestamp or any externally-verifiable pre-registration -- a git
-# commit could still be authored and backdated after the fact, so this
-# is a self-reported, working-tree-only discipline, not a cryptographic
-# or third-party-verifiable guarantee. Every downstream Phase 7 module
+# runs. Written BEFORE any Phase 7 model was fit or scored. "Frozen
+# before scoring" describes the order of operations in the development
+# working tree, not a git-commit timestamp or any externally
+# verifiable pre-registration -- a commit could be authored after the
+# fact, so this is a self-reported discipline, not a cryptographic or
+# third-party-verifiable guarantee. Every downstream Phase 7 module
 # reads its decisions from this file, never from a second, hand-copied
-# set of constants -- same discipline as `configs/phase_6_evaluation.yml`
-# (which, unlike this file, IS actually committed to git, in commit
-# 0dd4bfe -- verified directly via `git log --follow`).
+# set of constants -- same discipline as `configs/phase_6_evaluation.yml`.
 #
 # docs/project_rules.md / task-specification rules this file exists to satisfy:
 # "Freeze the Phase 7 design before running its new models... do not

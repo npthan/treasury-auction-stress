@@ -170,16 +170,12 @@ def audit_history(
     finding exists whose path-scoped allowlist token
     (`release_audit.allowlist_token`: '<path>::<fp:...>') is not
     explicitly listed in `allowed_identifying_info` -- the same explicit,
-    per-value, per-path,
-    never-inferred-from-presence policy `release_audit.audit_tree` uses,
-    and applied symmetrically here to BOTH `secret:*` and
-    `identifying_info:*` categories (this used to check only
-    identifying-info categories, leaving `secret:*` matches permanently
-    unallowlistable in history even when the exact same fingerprint was
-    already a reviewed, documented false positive for the current-tree
-    audit -- see `configs/governance_audit_allowlist.yml`; fixed so a
-    project's own deliberately-fake test canaries can be committed and
-    still pass full-history audit). A `rejected_path` or
+    per-value, per-path, never-inferred-from-presence policy
+    `release_audit.audit_tree` uses, applied symmetrically to BOTH
+    `secret:*` and `identifying_info:*` categories so a project's own
+    deliberately-fake, individually-reviewed test canaries (see
+    `configs/governance_audit_allowlist.yml`) can be committed and
+    still pass the full-history audit. A `rejected_path` or
     `oversized_fixture` finding can never be allowlisted this way (their
     `fingerprint` is always `None`).
     """

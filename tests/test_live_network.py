@@ -168,8 +168,8 @@ def test_live_fetch_rtdsm_variable_is_a_valid_workbook_with_expected_sheet():
 # moved here from the always-run offline suite (which now uses wholly
 # synthetic fixtures, see tests/rtdsm_synthetic_fixtures.py). These
 # three tests assert real, historically documented facts against
-# live-fetched data -- never a committed fixture -- and were actually
-# run and observed to pass against live data during this review.
+# live-fetched data -- never a committed fixture -- and were verified
+# to pass against live data when introduced.
 
 
 @pytest.mark.live_network

@@ -203,11 +203,11 @@ CATEGORICAL_IDENTITY_FIELDS: tuple[str, ...] = (
     "reopening",
     "inflation_index_security",
     "floating_rate",
-    # Added in the Phase 2 acceptance review: "No" identifies auctions
-    # restricted to primary-dealer-only bidding (customer/noncompetitive/
-    # FIMA tenders not accepted) -- verified against official Treasury
-    # announcement PDFs for the two $25,000,000 auctions this review
-    # investigated. See treasury_auction_stress.features.eligibility.
+    # "No" identifies auctions restricted to primary-dealer-only bidding
+    # (customer/noncompetitive/FIMA tenders not accepted) -- verified
+    # against official Treasury announcement PDFs for the two
+    # $25,000,000 restricted auctions. See
+    # treasury_auction_stress.features.eligibility.
     "noncomp_tenders_accepted",
 )
 

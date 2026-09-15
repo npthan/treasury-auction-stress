@@ -46,9 +46,8 @@ Treasury's published figure **exactly, for every one of 1281 rows**
 `reconcile_bid_to_cover` and the Phase 2 acceptance review.
 An earlier version of this module excluded FIMA as well as SOMA, which
 produced a spurious ~0.01-0.02 "unexplained residual" in the
-bid-to-cover reconciliation; that residual was not rounding noise, it
-was this formula error, and the acceptance review that found it is the
-reason FIMA is now included below.
+bid-to-cover reconciliation -- that residual was this formula error,
+not rounding noise, and is why FIMA is included below.
 
 **This project therefore uses `public_accepted_amount` (`comp_accepted
 + noncomp_accepted + fima_noncomp_accepted`) as the denominator for all

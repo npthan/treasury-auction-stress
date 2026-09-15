@@ -43,18 +43,18 @@ from treasury_auction_stress.features.eligibility import (
     select_modeling_sample,
 )
 
-# Phase 3 acceptance review: named, unambiguous sample universes (see
-# the Phase 3 acceptance review, "Sample-universe reconciliation").
+# Named, unambiguous sample universes (Phase 3 acceptance review,
+# "Sample-universe reconciliation").
 #
 # - NORMALIZED_COMPLETE_SAMPLE: every settled-or-pending nominal-coupon
 #   auction from 2010-01-01 onward, INCLUDING the two verified special
 #   (restricted, primary-dealer-only) auctions -- the full audit trail,
-#   nothing excluded. As of this session: 1281 rows (1281 settled + 0
+#   nothing excluded. Last verified count: 1281 rows (1281 settled + 0
 #   pending).
 # - ORDINARY_MODELING_SAMPLE: NORMALIZED_COMPLETE_SAMPLE with pending
 #   auctions and the two special auctions excluded -- the sample a
 #   future modeling phase would actually train on, matching Phase 2's
-#   `select_modeling_sample`. As of this session: 1279 rows.
+#   `select_modeling_sample`. Last verified count: 1279 rows.
 #
 # Every coverage table in the generated reports states, explicitly,
 # which of these two it was computed over.

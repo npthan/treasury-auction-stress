@@ -21,8 +21,8 @@ and `docs/data_dictionary.md`. This excludes Bills, TIPS, and
 All seven nominal coupon tenors: 2/3/5/7/10/20/30-year. The 20-year
 bond is structurally different from the other six: it was
 discontinued in 1986 and only reintroduced in May 2020, so it has a
-much shorter history (77 auctions vs. 190-211 for the other tenors as
-of this session) and no pre-2020 observations at all. This is not an
+much shorter history (77 auctions vs. 190-211 for the other tenors at
+the last verified count) and no pre-2020 observations at all. This is not an
 error or something to fill in -- it is a real, permanent limitation of
 the 20-year series that must be carried into every later phase's
 analysis (e.g. any tenor-level baseline or regime feature for the
@@ -131,10 +131,10 @@ bid), unrelated to the "Dealer Absorption Surprise" concept this
 project is trying to measure. Including them would let two auctions
 that cannot possibly reflect weak-demand-driven dealer absorption
 masquerade as the two most extreme "surprises" in the entire sample
-(which is exactly what happened before this review; see
-the Phase 2 acceptance review).
+(exactly what happened before the Phase 2 acceptance review
+caught it).
 
-**Disposition, per this review's requirements:**
+**Disposition:**
 
 1. Preserved in the complete normalized dataset -- never dropped by
    `treasury_auction_stress.data.normalize` or by
