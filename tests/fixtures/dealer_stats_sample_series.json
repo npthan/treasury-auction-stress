@@ -1,0 +1,1109 @@
+{
+  "source_name": "ny_fed_primary_dealer_statistics",
+  "raw_artifact_format_version": "1",
+  "series_list": null,
+  "series": [
+    {
+      "keyid": "PDPOSGS-B",
+      "url": "https://markets.newyorkfed.org/api/pd/get/PDPOSGS-B.json",
+      "http_status": 200,
+      "retrieved_at_utc": "2026-09-11T03:10:00+00:00",
+      "body": {
+        "pd": {
+          "timeseries": [
+            {
+              "asofdate": "2021-12-01",
+              "keyid": "PDPOSGS-B",
+              "value": "52790"
+            },
+            {
+              "asofdate": "2021-12-08",
+              "keyid": "PDPOSGS-B",
+              "value": "33464"
+            },
+            {
+              "asofdate": "2021-12-15",
+              "keyid": "PDPOSGS-B",
+              "value": "-3975"
+            },
+            {
+              "asofdate": "2021-12-22",
+              "keyid": "PDPOSGS-B",
+              "value": "13120"
+            },
+            {
+              "asofdate": "2021-12-29",
+              "keyid": "PDPOSGS-B",
+              "value": "16855"
+            },
+            {
+              "asofdate": "2022-01-05",
+              "keyid": "PDPOSGS-B",
+              "value": "26991"
+            },
+            {
+              "asofdate": "2022-01-12",
+              "keyid": "PDPOSGS-B",
+              "value": "46132"
+            },
+            {
+              "asofdate": "2022-01-19",
+              "keyid": "PDPOSGS-B",
+              "value": "59544"
+            },
+            {
+              "asofdate": "2022-01-26",
+              "keyid": "PDPOSGS-B",
+              "value": "49672"
+            },
+            {
+              "asofdate": "2022-02-02",
+              "keyid": "PDPOSGS-B",
+              "value": "47267"
+            },
+            {
+              "asofdate": "2022-02-09",
+              "keyid": "PDPOSGS-B",
+              "value": "52841"
+            },
+            {
+              "asofdate": "2022-02-16",
+              "keyid": "PDPOSGS-B",
+              "value": "47990"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "keyid": "PDPOSGSC-L2",
+      "url": "https://markets.newyorkfed.org/api/pd/get/PDPOSGSC-L2.json",
+      "http_status": 200,
+      "retrieved_at_utc": "2026-09-11T03:10:00+00:00",
+      "body": {
+        "pd": {
+          "timeseries": [
+            {
+              "asofdate": "2021-12-01",
+              "keyid": "PDPOSGSC-L2",
+              "value": "33700"
+            },
+            {
+              "asofdate": "2021-12-08",
+              "keyid": "PDPOSGSC-L2",
+              "value": "24199"
+            },
+            {
+              "asofdate": "2021-12-15",
+              "keyid": "PDPOSGSC-L2",
+              "value": "17040"
+            },
+            {
+              "asofdate": "2021-12-22",
+              "keyid": "PDPOSGSC-L2",
+              "value": "21642"
+            },
+            {
+              "asofdate": "2021-12-29",
+              "keyid": "PDPOSGSC-L2",
+              "value": "20244"
+            },
+            {
+              "asofdate": "2022-01-05",
+              "keyid": "PDPOSGSC-L2",
+              "value": "26442"
+            },
+            {
+              "asofdate": "2022-01-12",
+              "keyid": "PDPOSGSC-L2",
+              "value": "21172"
+            },
+            {
+              "asofdate": "2022-01-19",
+              "keyid": "PDPOSGSC-L2",
+              "value": "20675"
+            },
+            {
+              "asofdate": "2022-01-26",
+              "keyid": "PDPOSGSC-L2",
+              "value": "13278"
+            },
+            {
+              "asofdate": "2022-02-02",
+              "keyid": "PDPOSGSC-L2",
+              "value": "21927"
+            },
+            {
+              "asofdate": "2022-02-09",
+              "keyid": "PDPOSGSC-L2",
+              "value": "25605"
+            },
+            {
+              "asofdate": "2022-02-16",
+              "keyid": "PDPOSGSC-L2",
+              "value": "15022"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "keyid": "PDPOSGSC-G2L3",
+      "url": "https://markets.newyorkfed.org/api/pd/get/PDPOSGSC-G2L3.json",
+      "http_status": 200,
+      "retrieved_at_utc": "2026-09-11T03:10:00+00:00",
+      "body": {
+        "pd": {
+          "timeseries": [
+            {
+              "asofdate": "2021-12-01",
+              "keyid": "PDPOSGSC-G2L3",
+              "value": "-5258"
+            },
+            {
+              "asofdate": "2021-12-08",
+              "keyid": "PDPOSGSC-G2L3",
+              "value": "1773"
+            },
+            {
+              "asofdate": "2021-12-15",
+              "keyid": "PDPOSGSC-G2L3",
+              "value": "-2849"
+            },
+            {
+              "asofdate": "2021-12-22",
+              "keyid": "PDPOSGSC-G2L3",
+              "value": "43"
+            },
+            {
+              "asofdate": "2021-12-29",
+              "keyid": "PDPOSGSC-G2L3",
+              "value": "4185"
+            },
+            {
+              "asofdate": "2022-01-05",
+              "keyid": "PDPOSGSC-G2L3",
+              "value": "-5007"
+            },
+            {
+              "asofdate": "2022-01-12",
+              "keyid": "PDPOSGSC-G2L3",
+              "value": "-2133"
+            },
+            {
+              "asofdate": "2022-01-19",
+              "keyid": "PDPOSGSC-G2L3",
+              "value": "-3314"
+            },
+            {
+              "asofdate": "2022-01-26",
+              "keyid": "PDPOSGSC-G2L3",
+              "value": "-6902"
+            },
+            {
+              "asofdate": "2022-02-02",
+              "keyid": "PDPOSGSC-G2L3",
+              "value": "-8003"
+            },
+            {
+              "asofdate": "2022-02-09",
+              "keyid": "PDPOSGSC-G2L3",
+              "value": "-8311"
+            },
+            {
+              "asofdate": "2022-02-16",
+              "keyid": "PDPOSGSC-G2L3",
+              "value": "-9167"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "keyid": "PDPOSGSC-G3L6",
+      "url": "https://markets.newyorkfed.org/api/pd/get/PDPOSGSC-G3L6.json",
+      "http_status": 200,
+      "retrieved_at_utc": "2026-09-11T03:10:00+00:00",
+      "body": {
+        "pd": {
+          "timeseries": [
+            {
+              "asofdate": "2021-12-01",
+              "keyid": "PDPOSGSC-G3L6",
+              "value": "8644"
+            },
+            {
+              "asofdate": "2021-12-08",
+              "keyid": "PDPOSGSC-G3L6",
+              "value": "7964"
+            },
+            {
+              "asofdate": "2021-12-15",
+              "keyid": "PDPOSGSC-G3L6",
+              "value": "4172"
+            },
+            {
+              "asofdate": "2021-12-22",
+              "keyid": "PDPOSGSC-G3L6",
+              "value": "2390"
+            },
+            {
+              "asofdate": "2021-12-29",
+              "keyid": "PDPOSGSC-G3L6",
+              "value": "2394"
+            },
+            {
+              "asofdate": "2022-01-05",
+              "keyid": "PDPOSGSC-G3L6",
+              "value": "3046"
+            },
+            {
+              "asofdate": "2022-01-12",
+              "keyid": "PDPOSGSC-G3L6",
+              "value": "2489"
+            },
+            {
+              "asofdate": "2022-01-19",
+              "keyid": "PDPOSGSC-G3L6",
+              "value": "-2469"
+            },
+            {
+              "asofdate": "2022-01-26",
+              "keyid": "PDPOSGSC-G3L6",
+              "value": "4445"
+            },
+            {
+              "asofdate": "2022-02-02",
+              "keyid": "PDPOSGSC-G3L6",
+              "value": "6190"
+            },
+            {
+              "asofdate": "2022-02-09",
+              "keyid": "PDPOSGSC-G3L6",
+              "value": "14580"
+            },
+            {
+              "asofdate": "2022-02-16",
+              "keyid": "PDPOSGSC-G3L6",
+              "value": "10746"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "keyid": "PDPOSGSC-G6L7",
+      "url": "https://markets.newyorkfed.org/api/pd/get/PDPOSGSC-G6L7.json",
+      "http_status": 200,
+      "retrieved_at_utc": "2026-09-11T03:10:00+00:00",
+      "body": {
+        "pd": {
+          "timeseries": [
+            {
+              "asofdate": "2021-12-01",
+              "keyid": "PDPOSGSC-G6L7",
+              "value": "10930"
+            },
+            {
+              "asofdate": "2021-12-08",
+              "keyid": "PDPOSGSC-G6L7",
+              "value": "9619"
+            },
+            {
+              "asofdate": "2021-12-15",
+              "keyid": "PDPOSGSC-G6L7",
+              "value": "9810"
+            },
+            {
+              "asofdate": "2021-12-22",
+              "keyid": "PDPOSGSC-G6L7",
+              "value": "8300"
+            },
+            {
+              "asofdate": "2021-12-29",
+              "keyid": "PDPOSGSC-G6L7",
+              "value": "13223"
+            },
+            {
+              "asofdate": "2022-01-05",
+              "keyid": "PDPOSGSC-G6L7",
+              "value": "11904"
+            },
+            {
+              "asofdate": "2022-01-12",
+              "keyid": "PDPOSGSC-G6L7",
+              "value": "8666"
+            },
+            {
+              "asofdate": "2022-01-19",
+              "keyid": "PDPOSGSC-G6L7",
+              "value": "8062"
+            },
+            {
+              "asofdate": "2022-01-26",
+              "keyid": "PDPOSGSC-G6L7",
+              "value": "6579"
+            },
+            {
+              "asofdate": "2022-02-02",
+              "keyid": "PDPOSGSC-G6L7",
+              "value": "10346"
+            },
+            {
+              "asofdate": "2022-02-09",
+              "keyid": "PDPOSGSC-G6L7",
+              "value": "10293"
+            },
+            {
+              "asofdate": "2022-02-16",
+              "keyid": "PDPOSGSC-G6L7",
+              "value": "4955"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "keyid": "PDPOSGSC-G7L11",
+      "url": "https://markets.newyorkfed.org/api/pd/get/PDPOSGSC-G7L11.json",
+      "http_status": 200,
+      "retrieved_at_utc": "2026-09-11T03:10:00+00:00",
+      "body": {
+        "pd": {
+          "timeseries": [
+            {
+              "asofdate": "2021-12-01",
+              "keyid": "PDPOSGSC-G7L11",
+              "value": "-3599"
+            },
+            {
+              "asofdate": "2021-12-08",
+              "keyid": "PDPOSGSC-G7L11",
+              "value": "-187"
+            },
+            {
+              "asofdate": "2021-12-15",
+              "keyid": "PDPOSGSC-G7L11",
+              "value": "-3330"
+            },
+            {
+              "asofdate": "2021-12-22",
+              "keyid": "PDPOSGSC-G7L11",
+              "value": "-3021"
+            },
+            {
+              "asofdate": "2021-12-29",
+              "keyid": "PDPOSGSC-G7L11",
+              "value": "-2729"
+            },
+            {
+              "asofdate": "2022-01-05",
+              "keyid": "PDPOSGSC-G7L11",
+              "value": "-4168"
+            },
+            {
+              "asofdate": "2022-01-12",
+              "keyid": "PDPOSGSC-G7L11",
+              "value": "-3259"
+            },
+            {
+              "asofdate": "2022-01-19",
+              "keyid": "PDPOSGSC-G7L11",
+              "value": "-4635"
+            },
+            {
+              "asofdate": "2022-01-26",
+              "keyid": "PDPOSGSC-G7L11",
+              "value": "-4864"
+            },
+            {
+              "asofdate": "2022-02-02",
+              "keyid": "PDPOSGSC-G7L11",
+              "value": "-6565"
+            },
+            {
+              "asofdate": "2022-02-09",
+              "keyid": "PDPOSGSC-G7L11",
+              "value": "-5083"
+            },
+            {
+              "asofdate": "2022-02-16",
+              "keyid": "PDPOSGSC-G7L11",
+              "value": "-6772"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "keyid": "PDPOSGSC-G11L21",
+      "url": "https://markets.newyorkfed.org/api/pd/get/PDPOSGSC-G11L21.json",
+      "http_status": 200,
+      "retrieved_at_utc": "2026-09-11T03:10:00+00:00",
+      "body": {
+        "pd": {
+          "timeseries": [
+            {
+              "asofdate": "2022-01-05",
+              "keyid": "PDPOSGSC-G11L21",
+              "value": "14618"
+            },
+            {
+              "asofdate": "2022-01-12",
+              "keyid": "PDPOSGSC-G11L21",
+              "value": "15576"
+            },
+            {
+              "asofdate": "2022-01-19",
+              "keyid": "PDPOSGSC-G11L21",
+              "value": "16317"
+            },
+            {
+              "asofdate": "2022-01-26",
+              "keyid": "PDPOSGSC-G11L21",
+              "value": "15630"
+            },
+            {
+              "asofdate": "2022-02-02",
+              "keyid": "PDPOSGSC-G11L21",
+              "value": "14697"
+            },
+            {
+              "asofdate": "2022-02-09",
+              "keyid": "PDPOSGSC-G11L21",
+              "value": "13561"
+            },
+            {
+              "asofdate": "2022-02-16",
+              "keyid": "PDPOSGSC-G11L21",
+              "value": "14195"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "keyid": "PDPOSGSC-G21",
+      "url": "https://markets.newyorkfed.org/api/pd/get/PDPOSGSC-G21.json",
+      "http_status": 200,
+      "retrieved_at_utc": "2026-09-11T03:10:00+00:00",
+      "body": {
+        "pd": {
+          "timeseries": [
+            {
+              "asofdate": "2022-01-05",
+              "keyid": "PDPOSGSC-G21",
+              "value": "30824"
+            },
+            {
+              "asofdate": "2022-01-12",
+              "keyid": "PDPOSGSC-G21",
+              "value": "30133"
+            },
+            {
+              "asofdate": "2022-01-19",
+              "keyid": "PDPOSGSC-G21",
+              "value": "30532"
+            },
+            {
+              "asofdate": "2022-01-26",
+              "keyid": "PDPOSGSC-G21",
+              "value": "28563"
+            },
+            {
+              "asofdate": "2022-02-02",
+              "keyid": "PDPOSGSC-G21",
+              "value": "32524"
+            },
+            {
+              "asofdate": "2022-02-09",
+              "keyid": "PDPOSGSC-G21",
+              "value": "30606"
+            },
+            {
+              "asofdate": "2022-02-16",
+              "keyid": "PDPOSGSC-G21",
+              "value": "31275"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "keyid": "PDPOSGST-TOT",
+      "url": "https://markets.newyorkfed.org/api/pd/get/PDPOSGST-TOT.json",
+      "http_status": 200,
+      "retrieved_at_utc": "2026-09-11T03:10:00+00:00",
+      "body": {
+        "pd": {
+          "timeseries": [
+            {
+              "asofdate": "2021-12-01",
+              "keyid": "PDPOSGST-TOT",
+              "value": "152614"
+            },
+            {
+              "asofdate": "2021-12-08",
+              "keyid": "PDPOSGST-TOT",
+              "value": "133119"
+            },
+            {
+              "asofdate": "2021-12-15",
+              "keyid": "PDPOSGST-TOT",
+              "value": "75588"
+            },
+            {
+              "asofdate": "2021-12-22",
+              "keyid": "PDPOSGST-TOT",
+              "value": "94996"
+            },
+            {
+              "asofdate": "2021-12-29",
+              "keyid": "PDPOSGST-TOT",
+              "value": "112641"
+            },
+            {
+              "asofdate": "2022-01-05",
+              "keyid": "PDPOSGST-TOT",
+              "value": "112141"
+            },
+            {
+              "asofdate": "2022-01-12",
+              "keyid": "PDPOSGST-TOT",
+              "value": "124399"
+            },
+            {
+              "asofdate": "2022-01-19",
+              "keyid": "PDPOSGST-TOT",
+              "value": "127389"
+            },
+            {
+              "asofdate": "2022-01-26",
+              "keyid": "PDPOSGST-TOT",
+              "value": "117761"
+            },
+            {
+              "asofdate": "2022-02-02",
+              "keyid": "PDPOSGST-TOT",
+              "value": "127610"
+            },
+            {
+              "asofdate": "2022-02-09",
+              "keyid": "PDPOSGST-TOT",
+              "value": "140936"
+            },
+            {
+              "asofdate": "2022-02-16",
+              "keyid": "PDPOSGST-TOT",
+              "value": "118398"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "keyid": "PDGSWOEXTTOT",
+      "url": "https://markets.newyorkfed.org/api/pd/get/PDGSWOEXTTOT.json",
+      "http_status": 200,
+      "retrieved_at_utc": "2026-09-11T03:10:00+00:00",
+      "body": {
+        "pd": {
+          "timeseries": [
+            {
+              "asofdate": "2021-12-01",
+              "keyid": "PDGSWOEXTTOT",
+              "value": "746593"
+            },
+            {
+              "asofdate": "2021-12-08",
+              "keyid": "PDGSWOEXTTOT",
+              "value": "624449"
+            },
+            {
+              "asofdate": "2021-12-15",
+              "keyid": "PDGSWOEXTTOT",
+              "value": "527687"
+            },
+            {
+              "asofdate": "2021-12-22",
+              "keyid": "PDGSWOEXTTOT",
+              "value": "484888"
+            },
+            {
+              "asofdate": "2021-12-29",
+              "keyid": "PDGSWOEXTTOT",
+              "value": "402057"
+            },
+            {
+              "asofdate": "2022-01-05",
+              "keyid": "PDGSWOEXTTOT",
+              "value": "593490"
+            },
+            {
+              "asofdate": "2022-01-12",
+              "keyid": "PDGSWOEXTTOT",
+              "value": "638406"
+            },
+            {
+              "asofdate": "2022-01-19",
+              "keyid": "PDGSWOEXTTOT",
+              "value": "645374"
+            },
+            {
+              "asofdate": "2022-01-26",
+              "keyid": "PDGSWOEXTTOT",
+              "value": "718250"
+            },
+            {
+              "asofdate": "2022-02-02",
+              "keyid": "PDGSWOEXTTOT",
+              "value": "677833"
+            },
+            {
+              "asofdate": "2022-02-09",
+              "keyid": "PDGSWOEXTTOT",
+              "value": "613945"
+            },
+            {
+              "asofdate": "2022-02-16",
+              "keyid": "PDGSWOEXTTOT",
+              "value": "710417"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "keyid": "PDSORA-UTSETTOT",
+      "url": "https://markets.newyorkfed.org/api/pd/get/PDSORA-UTSETTOT.json",
+      "http_status": 200,
+      "retrieved_at_utc": "2026-09-11T03:10:00+00:00",
+      "body": {
+        "pd": {
+          "timeseries": [
+            {
+              "asofdate": "2021-12-01",
+              "keyid": "PDSORA-UTSETTOT",
+              "value": "1773528"
+            },
+            {
+              "asofdate": "2021-12-08",
+              "keyid": "PDSORA-UTSETTOT",
+              "value": "1760512"
+            },
+            {
+              "asofdate": "2021-12-15",
+              "keyid": "PDSORA-UTSETTOT",
+              "value": "1748872"
+            },
+            {
+              "asofdate": "2021-12-22",
+              "keyid": "PDSORA-UTSETTOT",
+              "value": "1773392"
+            },
+            {
+              "asofdate": "2021-12-29",
+              "keyid": "PDSORA-UTSETTOT",
+              "value": "1765453"
+            },
+            {
+              "asofdate": "2022-01-05",
+              "keyid": "PDSORA-UTSETTOT",
+              "value": "1730013"
+            },
+            {
+              "asofdate": "2022-01-12",
+              "keyid": "PDSORA-UTSETTOT",
+              "value": "*"
+            },
+            {
+              "asofdate": "2022-01-19",
+              "keyid": "PDSORA-UTSETTOT",
+              "value": "1757911"
+            },
+            {
+              "asofdate": "2022-01-26",
+              "keyid": "PDSORA-UTSETTOT",
+              "value": "1730074"
+            },
+            {
+              "asofdate": "2022-02-02",
+              "keyid": "PDSORA-UTSETTOT",
+              "value": "1753182"
+            },
+            {
+              "asofdate": "2022-02-09",
+              "keyid": "PDSORA-UTSETTOT",
+              "value": "1742536"
+            },
+            {
+              "asofdate": "2022-02-16",
+              "keyid": "PDSORA-UTSETTOT",
+              "value": "1765972"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "keyid": "PDSIRRA-UTSETTOT",
+      "url": "https://markets.newyorkfed.org/api/pd/get/PDSIRRA-UTSETTOT.json",
+      "http_status": 200,
+      "retrieved_at_utc": "2026-09-11T03:10:00+00:00",
+      "body": {
+        "pd": {
+          "timeseries": [
+            {
+              "asofdate": "2021-12-01",
+              "keyid": "PDSIRRA-UTSETTOT",
+              "value": "1542603"
+            },
+            {
+              "asofdate": "2021-12-08",
+              "keyid": "PDSIRRA-UTSETTOT",
+              "value": "1555002"
+            },
+            {
+              "asofdate": "2021-12-15",
+              "keyid": "PDSIRRA-UTSETTOT",
+              "value": "1607381"
+            },
+            {
+              "asofdate": "2021-12-22",
+              "keyid": "PDSIRRA-UTSETTOT",
+              "value": "1604934"
+            },
+            {
+              "asofdate": "2021-12-29",
+              "keyid": "PDSIRRA-UTSETTOT",
+              "value": "1625987"
+            },
+            {
+              "asofdate": "2022-01-05",
+              "keyid": "PDSIRRA-UTSETTOT",
+              "value": "1543823"
+            },
+            {
+              "asofdate": "2022-01-12",
+              "keyid": "PDSIRRA-UTSETTOT",
+              "value": "1590521"
+            },
+            {
+              "asofdate": "2022-01-19",
+              "keyid": "PDSIRRA-UTSETTOT",
+              "value": "1588886"
+            },
+            {
+              "asofdate": "2022-01-26",
+              "keyid": "PDSIRRA-UTSETTOT",
+              "value": "1558560"
+            },
+            {
+              "asofdate": "2022-02-02",
+              "keyid": "PDSIRRA-UTSETTOT",
+              "value": "1559910"
+            },
+            {
+              "asofdate": "2022-02-09",
+              "keyid": "PDSIRRA-UTSETTOT",
+              "value": "1555461"
+            },
+            {
+              "asofdate": "2022-02-16",
+              "keyid": "PDSIRRA-UTSETTOT",
+              "value": "1602126"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "keyid": "PDSIOSB-UTSETTOT",
+      "url": "https://markets.newyorkfed.org/api/pd/get/PDSIOSB-UTSETTOT.json",
+      "http_status": 200,
+      "retrieved_at_utc": "2026-09-11T03:10:00+00:00",
+      "body": {
+        "pd": {
+          "timeseries": [
+            {
+              "asofdate": "2021-12-01",
+              "keyid": "PDSIOSB-UTSETTOT",
+              "value": "392757"
+            },
+            {
+              "asofdate": "2021-12-08",
+              "keyid": "PDSIOSB-UTSETTOT",
+              "value": "386601"
+            },
+            {
+              "asofdate": "2021-12-15",
+              "keyid": "PDSIOSB-UTSETTOT",
+              "value": "385930"
+            },
+            {
+              "asofdate": "2021-12-22",
+              "keyid": "PDSIOSB-UTSETTOT",
+              "value": "392108"
+            },
+            {
+              "asofdate": "2021-12-29",
+              "keyid": "PDSIOSB-UTSETTOT",
+              "value": "385215"
+            },
+            {
+              "asofdate": "2022-01-05",
+              "keyid": "PDSIOSB-UTSETTOT",
+              "value": "387724"
+            },
+            {
+              "asofdate": "2022-01-12",
+              "keyid": "PDSIOSB-UTSETTOT",
+              "value": "406200"
+            },
+            {
+              "asofdate": "2022-01-19",
+              "keyid": "PDSIOSB-UTSETTOT",
+              "value": "412277"
+            },
+            {
+              "asofdate": "2022-01-26",
+              "keyid": "PDSIOSB-UTSETTOT",
+              "value": "417901"
+            },
+            {
+              "asofdate": "2022-02-02",
+              "keyid": "PDSIOSB-UTSETTOT",
+              "value": "422713"
+            },
+            {
+              "asofdate": "2022-02-09",
+              "keyid": "PDSIOSB-UTSETTOT",
+              "value": "418738"
+            },
+            {
+              "asofdate": "2022-02-16",
+              "keyid": "PDSIOSB-UTSETTOT",
+              "value": "409214"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "keyid": "PDSOOS-UTSETTOT",
+      "url": "https://markets.newyorkfed.org/api/pd/get/PDSOOS-UTSETTOT.json",
+      "http_status": 200,
+      "retrieved_at_utc": "2026-09-11T03:10:00+00:00",
+      "body": {
+        "pd": {
+          "timeseries": [
+            {
+              "asofdate": "2021-12-01",
+              "keyid": "PDSOOS-UTSETTOT",
+              "value": "*"
+            },
+            {
+              "asofdate": "2021-12-08",
+              "keyid": "PDSOOS-UTSETTOT",
+              "value": "*"
+            },
+            {
+              "asofdate": "2021-12-15",
+              "keyid": "PDSOOS-UTSETTOT",
+              "value": "*"
+            },
+            {
+              "asofdate": "2021-12-22",
+              "keyid": "PDSOOS-UTSETTOT",
+              "value": "*"
+            },
+            {
+              "asofdate": "2021-12-29",
+              "keyid": "PDSOOS-UTSETTOT",
+              "value": "121126"
+            },
+            {
+              "asofdate": "2022-01-05",
+              "keyid": "PDSOOS-UTSETTOT",
+              "value": "101732"
+            },
+            {
+              "asofdate": "2022-01-12",
+              "keyid": "PDSOOS-UTSETTOT",
+              "value": "121546"
+            },
+            {
+              "asofdate": "2022-01-19",
+              "keyid": "PDSOOS-UTSETTOT",
+              "value": "*"
+            },
+            {
+              "asofdate": "2022-01-26",
+              "keyid": "PDSOOS-UTSETTOT",
+              "value": "*"
+            },
+            {
+              "asofdate": "2022-02-02",
+              "keyid": "PDSOOS-UTSETTOT",
+              "value": "122187"
+            },
+            {
+              "asofdate": "2022-02-09",
+              "keyid": "PDSOOS-UTSETTOT",
+              "value": "130543"
+            },
+            {
+              "asofdate": "2022-02-16",
+              "keyid": "PDSOOS-UTSETTOT",
+              "value": "124288"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "keyid": "PDFTD-USTET",
+      "url": "https://markets.newyorkfed.org/api/pd/get/PDFTD-USTET.json",
+      "http_status": 200,
+      "retrieved_at_utc": "2026-09-11T03:10:00+00:00",
+      "body": {
+        "pd": {
+          "timeseries": [
+            {
+              "asofdate": "2021-12-01",
+              "keyid": "PDFTD-USTET",
+              "value": "95869"
+            },
+            {
+              "asofdate": "2021-12-08",
+              "keyid": "PDFTD-USTET",
+              "value": "96766"
+            },
+            {
+              "asofdate": "2021-12-15",
+              "keyid": "PDFTD-USTET",
+              "value": "102432"
+            },
+            {
+              "asofdate": "2021-12-22",
+              "keyid": "PDFTD-USTET",
+              "value": "108596"
+            },
+            {
+              "asofdate": "2021-12-29",
+              "keyid": "PDFTD-USTET",
+              "value": "66064"
+            },
+            {
+              "asofdate": "2022-01-05",
+              "keyid": "PDFTD-USTET",
+              "value": "89271"
+            },
+            {
+              "asofdate": "2022-01-12",
+              "keyid": "PDFTD-USTET",
+              "value": "86871"
+            },
+            {
+              "asofdate": "2022-01-19",
+              "keyid": "PDFTD-USTET",
+              "value": "104113"
+            },
+            {
+              "asofdate": "2022-01-26",
+              "keyid": "PDFTD-USTET",
+              "value": "113532"
+            },
+            {
+              "asofdate": "2022-02-02",
+              "keyid": "PDFTD-USTET",
+              "value": "122152"
+            },
+            {
+              "asofdate": "2022-02-09",
+              "keyid": "PDFTD-USTET",
+              "value": "90137"
+            },
+            {
+              "asofdate": "2022-02-16",
+              "keyid": "PDFTD-USTET",
+              "value": "96417"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "keyid": "PDFTR-USTET",
+      "url": "https://markets.newyorkfed.org/api/pd/get/PDFTR-USTET.json",
+      "http_status": 200,
+      "retrieved_at_utc": "2026-09-11T03:10:00+00:00",
+      "body": {
+        "pd": {
+          "timeseries": [
+            {
+              "asofdate": "2021-12-01",
+              "keyid": "PDFTR-USTET",
+              "value": "113276"
+            },
+            {
+              "asofdate": "2021-12-08",
+              "keyid": "PDFTR-USTET",
+              "value": "117856"
+            },
+            {
+              "asofdate": "2021-12-15",
+              "keyid": "PDFTR-USTET",
+              "value": "121770"
+            },
+            {
+              "asofdate": "2021-12-22",
+              "keyid": "PDFTR-USTET",
+              "value": "114041"
+            },
+            {
+              "asofdate": "2021-12-29",
+              "keyid": "PDFTR-USTET",
+              "value": "83906"
+            },
+            {
+              "asofdate": "2022-01-05",
+              "keyid": "PDFTR-USTET",
+              "value": "102650"
+            },
+            {
+              "asofdate": "2022-01-12",
+              "keyid": "PDFTR-USTET",
+              "value": "101248"
+            },
+            {
+              "asofdate": "2022-01-19",
+              "keyid": "PDFTR-USTET",
+              "value": "123237"
+            },
+            {
+              "asofdate": "2022-01-26",
+              "keyid": "PDFTR-USTET",
+              "value": "142510"
+            },
+            {
+              "asofdate": "2022-02-02",
+              "keyid": "PDFTR-USTET",
+              "value": "135344"
+            },
+            {
+              "asofdate": "2022-02-09",
+              "keyid": "PDFTR-USTET",
+              "value": "107947"
+            },
+            {
+              "asofdate": "2022-02-16",
+              "keyid": "PDFTR-USTET",
+              "value": "116102"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

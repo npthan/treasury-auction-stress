@@ -1,0 +1,43 @@
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+wheels/
+
+# Test and lint caches
+.pytest_cache/
+.ruff_cache/
+
+# Notebook checkpoints
+.ipynb_checkpoints/
+
+# Virtual environment
+.venv/
+
+# Secrets
+.env
+.env.*
+
+# Downloaded and generated data (raw/interim/processed are pipeline outputs,
+# never committed). Small hand-picked fixtures live under tests/fixtures/
+# instead, which is NOT covered by these patterns.
+data/raw/*
+data/interim/*
+data/processed/*
+!data/raw/.gitkeep
+!data/interim/.gitkeep
+!data/processed/.gitkeep
+
+# macOS
+.DS_Store
+
+# Local logs and temp files (belt-and-suspenders; no such file is
+# currently tracked, added during the Phase 9 release audit)
+*.log
+*.tmp
+
+# Generated reports and figures (written by the generation CLIs on demand;
+# intentionally untracked -- see docs/reproducibility.md)
+artifacts/

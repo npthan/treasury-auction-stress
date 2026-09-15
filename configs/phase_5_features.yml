@@ -1,0 +1,2023 @@
+# Phase 5 feature contract -- the single machine-readable source of
+# truth for every field this project's predictor matrices, target
+# table, and audit tables carry. Generated artifacts/phase_5_feature_
+# dictionary.md is rendered directly from this file by
+# treasury_auction_stress.features.feature_manifest -- do not maintain
+# a second, hand-written copy of this information anywhere else.
+#
+# Every entry's `default_tier` was assigned using economic mechanism,
+# source semantics, historical availability, redundancy, and
+# interpretability -- NEVER by examining a relationship with any
+# target (primary_dealer_share, direct_bidder_share,
+# indirect_bidder_share, bid_to_cover_ratio). No feature-target
+# correlation, mutual information, p-value, or model-performance
+# metric was computed or consulted while writing this file.
+#
+# `feature_role` values: identifier, cutoff_metadata, predictor,
+# audit_provenance, target, target_diagnostic, target_construction_only,
+# excluded.
+#
+# `default_tier` values: core, extended, audit_only, excluded.
+#
+# A `name_pattern` entry (instead of a literal `canonical_feature_name`)
+# describes a *family* of columns that share one construction and one
+# risk profile -- used for per-source-series and per-RTDSM-variable
+# audit/provenance columns, where dozens of near-identical columns
+# (one per series or per macro variable) would otherwise force
+# needless, non-informative repetition. Every predictor and target
+# column actually materialized in the Phase 5 matrices has its own
+# literal `canonical_feature_name` entry, never only a pattern.
+
+metadata:
+  document: "Phase 5 point-in-time feature contract"
+  status: "implemented, pending independent acceptance review"
+  auction_key_definition: "cusip + '_' + auction_date.date().isoformat() -- a stable, deterministic string key; never row position"
+  sample: "ordinary_modeling_sample (treasury_auction_stress.features.eligibility.select_modeling_sample), 1,279 rows as of this session -- see artifacts/phase_5_feature_matrix.md for the exact count observed at generation time"
+  cutoffs:
+    - announcement: "public information as of the end of announcemt_date (date-level, per docs/point_in_time_rules.md)"
+    - pre_auction: "public information as of the end of pre_auction_cutoff_date, the previous U.S. federal business day before auction_date"
+
+features:
+
+  # ============================================================
+  # Identifiers and cutoff metadata
+  # ============================================================
+
+  - canonical_feature_name: auction_key
+    source_family: identifier
+    source_field_or_derivation: "derived: cusip + '_' + auction_date.date().isoformat()"
+    description: "Stable, deterministic per-auction identity key; never row position."
+    economic_rationale: "n/a -- bookkeeping key, not an economic quantity"
+    transformation: "string concatenation"
+    unit: "n/a"
+    dtype: "string"
+    applicable_forecast_cutoff: [announcement, pre_auction]
+    required_lookback: "none"
+    minimum_history: "none"
+    availability_provenance: "known exactly at announcement time"
+    missingness_meaning: "never missing for an eligible row"
+    schema_period_limitations: "none"
+    feature_role: identifier
+    default_tier: excluded
+    leakage_risk: "none"
+    leakage_mitigation: "n/a; excluded from modeling by feature_role, never passed to a model as a categorical predictor (high cardinality, one level per auction)"
+
+  - canonical_feature_name: cusip
+    source_family: identifier
+    source_field_or_derivation: "Fiscal Data auctions API field cusip"
+    description: "The security's CUSIP identifier."
+    economic_rationale: "n/a -- identity field"
+    transformation: "none"
+    unit: "n/a"
+    dtype: "string"
+    applicable_forecast_cutoff: [announcement, pre_auction]
+    required_lookback: "none"
+    minimum_history: "none"
+    availability_provenance: "known exactly at announcement time"
+    missingness_meaning: "never missing"
+    schema_period_limitations: "none"
+    feature_role: identifier
+    default_tier: excluded
+    leakage_risk: "high-cardinality security identity would let a model memorize a specific security's own historical outcome"
+    leakage_mitigation: "retained only as identifier/index metadata, per task instruction; never exposed as a categorical predictor"
+
+  - canonical_feature_name: auction_date
+    source_family: identifier
+    source_field_or_derivation: "Fiscal Data auctions API field auction_date"
+    description: "The calendar date the auction itself is held."
+    economic_rationale: "n/a -- identity/timing field"
+    transformation: "none"
+    unit: "date"
+    dtype: "datetime64[ns]"
+    applicable_forecast_cutoff: [announcement, pre_auction]
+    required_lookback: "none"
+    minimum_history: "none"
+    availability_provenance: "known exactly at announcement time (the announcement discloses the auction date)"
+    missingness_meaning: "never missing"
+    schema_period_limitations: "none"
+    feature_role: identifier
+    default_tier: excluded
+    leakage_risk: "none directly, but treated as index metadata, not an ordinary predictor, per task instruction"
+    leakage_mitigation: "n/a"
+
+  - canonical_feature_name: tenor
+    source_family: auction_structure
+    source_field_or_derivation: "normalize.py's tenor (== original_security_term for nominal-coupon rows)"
+    description: "The auction's nominal-coupon tenor (2/3/5/7/10/20/30-Year), 7 categorical levels."
+    economic_rationale: "Dealer take-down, curve positioning, and CFTC/dealer-inventory relevance all differ systematically by tenor; the single most important structural grouping variable in this project."
+    transformation: "none (categorical passthrough; encoding deferred to Phase 6 training folds)"
+    unit: "categorical, 7 levels"
+    dtype: "string"
+    applicable_forecast_cutoff: [announcement, pre_auction]
+    required_lookback: "none"
+    minimum_history: "none"
+    availability_provenance: "known exactly at announcement time"
+    missingness_meaning: "never missing for an eligible row"
+    schema_period_limitations: "20-Year has no history before its 2020-05-20 reintroduction"
+    feature_role: predictor
+    default_tier: core
+    leakage_risk: "none"
+    leakage_mitigation: "n/a"
+
+  - canonical_feature_name: announcemt_date
+    source_family: cutoff_metadata
+    source_field_or_derivation: "Fiscal Data auctions API field announcemt_date"
+    description: "The calendar date this auction's terms were publicly announced (API's own field spelling)."
+    economic_rationale: "n/a -- cutoff-defining field"
+    transformation: "none"
+    unit: "date"
+    dtype: "datetime64[ns]"
+    applicable_forecast_cutoff: [announcement, pre_auction]
+    required_lookback: "none"
+    minimum_history: "none"
+    availability_provenance: "n/a"
+    missingness_meaning: "never missing"
+    schema_period_limitations: "none"
+    feature_role: cutoff_metadata
+    default_tier: audit_only
+    leakage_risk: "none"
+    leakage_mitigation: "n/a"
+
+  - canonical_feature_name: announcement_cutoff_date
+    source_family: cutoff_metadata
+    source_field_or_derivation: "auction_cutoffs.add_cutoff_dates: normalize(announcemt_date)"
+    description: "The announcement-time prediction cutoff for this auction."
+    economic_rationale: "n/a -- defines the announcement matrix's own cutoff"
+    transformation: "date normalization"
+    unit: "date"
+    dtype: "datetime64[ns]"
+    applicable_forecast_cutoff: [announcement]
+    required_lookback: "none"
+    minimum_history: "none"
+    availability_provenance: "n/a"
+    missingness_meaning: "never missing"
+    schema_period_limitations: "none"
+    feature_role: cutoff_metadata
+    default_tier: audit_only
+    leakage_risk: "none"
+    leakage_mitigation: "n/a"
+
+  - canonical_feature_name: pre_auction_cutoff_date
+    source_family: cutoff_metadata
+    source_field_or_derivation: "auction_cutoffs.add_cutoff_dates: previous_business_day(auction_date)"
+    description: "The pre-auction prediction cutoff for this auction (previous U.S. federal business day before auction_date)."
+    economic_rationale: "n/a -- defines the pre-auction matrix's own cutoff"
+    transformation: "previous-business-day calendar calculation"
+    unit: "date"
+    dtype: "datetime64[ns]"
+    applicable_forecast_cutoff: [pre_auction]
+    required_lookback: "none"
+    minimum_history: "none"
+    availability_provenance: "n/a"
+    missingness_meaning: "never missing"
+    schema_period_limitations: "Federal Reserve holiday calendar, not SIFMA bond-market holidays (disclosed Good Friday divergence)"
+    feature_role: cutoff_metadata
+    default_tier: audit_only
+    leakage_risk: "none"
+    leakage_mitigation: "n/a"
+
+  # ============================================================
+  # Auction structure predictors (core)
+  # ============================================================
+
+  - canonical_feature_name: is_reopening
+    source_family: auction_structure
+    source_field_or_derivation: "normalize.py's is_reopening (== reopening == 'Yes')"
+    description: "Whether this auction reopens an existing CUSIP rather than issuing a new one."
+    economic_rationale: "A reopening adds to an already-trading, liquid CUSIP; a new issue starts a fresh line -- economically distinct for dealer absorption (docs/project_plan.md)."
+    transformation: "none"
+    unit: "boolean"
+    dtype: "bool"
+    applicable_forecast_cutoff: [announcement, pre_auction]
+    required_lookback: "none"
+    minimum_history: "none"
+    availability_provenance: "known exactly at announcement time"
+    missingness_meaning: "never missing"
+    schema_period_limitations: "none"
+    feature_role: predictor
+    default_tier: core
+    leakage_risk: "none"
+    leakage_mitigation: "n/a"
+
+  - canonical_feature_name: offering_amt
+    source_family: auction_structure
+    source_field_or_derivation: "Fiscal Data auctions API field offering_amt"
+    description: "The publicly announced offering amount, in dollars."
+    economic_rationale: "The single largest determinant of how much supply the market (and dealers) must absorb."
+    transformation: "none"
+    unit: "USD"
+    dtype: "Float64"
+    applicable_forecast_cutoff: [announcement, pre_auction]
+    required_lookback: "none"
+    minimum_history: "none"
+    availability_provenance: "known exactly at announcement time"
+    missingness_meaning: "never missing for an eligible row"
+    schema_period_limitations: "two verified restricted primary-dealer-only auctions ($25,000,000) are excluded from the modeling sample entirely (docs/target_specification.md)"
+    feature_role: predictor
+    default_tier: core
+    leakage_risk: "none"
+    leakage_mitigation: "n/a"
+
+  - canonical_feature_name: log_offering_amt
+    source_family: auction_structure
+    source_field_or_derivation: "auction_candidate_features.add_offering_amount_features: log1p(offering_amt)"
+    description: "log1p of the offering amount."
+    economic_rationale: "Offering sizes span orders of magnitude; structural size effects (e.g. dealer_absorption.py's own offering_slope) are naturally linear in log-size."
+    transformation: "log1p, fixed and deterministic"
+    unit: "log(USD)"
+    dtype: "float64"
+    applicable_forecast_cutoff: [announcement, pre_auction]
+    required_lookback: "none"
+    minimum_history: "none"
+    availability_provenance: "known exactly at announcement time"
+    missingness_meaning: "never missing for an eligible row"
+    schema_period_limitations: "none beyond offering_amt's own"
+    feature_role: predictor
+    default_tier: core
+    leakage_risk: "none"
+    leakage_mitigation: "n/a"
+
+  - canonical_feature_name: days_announcement_to_auction
+    source_family: auction_structure
+    source_field_or_derivation: "auction_candidate_features.add_announcement_to_auction_gap: (auction_date - announcemt_date).days"
+    description: "Calendar days between the public announcement and the auction itself."
+    economic_rationale: "A longer or shorter run-up window can affect how much of the market has positioned ahead of the auction."
+    transformation: "date subtraction"
+    unit: "days"
+    dtype: "int64"
+    applicable_forecast_cutoff: [announcement, pre_auction]
+    required_lookback: "none"
+    minimum_history: "none"
+    availability_provenance: "both dates known exactly at announcement time"
+    missingness_meaning: "never missing for an eligible row"
+    schema_period_limitations: "none"
+    feature_role: predictor
+    default_tier: core
+    leakage_risk: "none"
+    leakage_mitigation: "n/a"
+
+  - canonical_feature_name: auction_month
+    source_family: auction_structure
+    source_field_or_derivation: "auction_candidate_features.add_calendar_features: auction_date.dt.month"
+    description: "Calendar month (1-12) of the auction date."
+    economic_rationale: "Treasury's issuance calendar and dealer balance-sheet capacity (e.g. quarter-end constraints) have seasonal structure."
+    transformation: "date component extraction"
+    unit: "month number, 1-12"
+    dtype: "int32"
+    applicable_forecast_cutoff: [announcement, pre_auction]
+    required_lookback: "none"
+    minimum_history: "none"
+    availability_provenance: "known exactly at announcement time"
+    missingness_meaning: "never missing"
+    schema_period_limitations: "none"
+    feature_role: predictor
+    default_tier: core
+    leakage_risk: "none"
+    leakage_mitigation: "n/a"
+
+  - canonical_feature_name: auction_quarter
+    source_family: auction_structure
+    source_field_or_derivation: "auction_candidate_features.add_calendar_features: auction_date.dt.quarter"
+    description: "Calendar quarter (1-4) of the auction date."
+    economic_rationale: "Quarter-end dealer balance-sheet/regulatory constraints (e.g. SLR reporting dates) can affect willingness to warehouse new supply."
+    transformation: "date component extraction"
+    unit: "quarter number, 1-4"
+    dtype: "int32"
+    applicable_forecast_cutoff: [announcement, pre_auction]
+    required_lookback: "none"
+    minimum_history: "none"
+    availability_provenance: "known exactly at announcement time"
+    missingness_meaning: "never missing"
+    schema_period_limitations: "none"
+    feature_role: predictor
+    default_tier: core
+    leakage_risk: "none"
+    leakage_mitigation: "n/a"
+
+  - canonical_feature_name: auction_day_of_week
+    source_family: auction_structure
+    source_field_or_derivation: "auction_candidate_features.add_calendar_features: auction_date.dt.dayofweek"
+    description: "Day of week (0=Monday .. 6=Sunday) of the auction date."
+    economic_rationale: "Treasury's auction calendar clusters heavily by weekday; captures residual weekday structure not otherwise represented."
+    transformation: "date component extraction"
+    unit: "day-of-week code, 0-6"
+    dtype: "int32"
+    applicable_forecast_cutoff: [announcement, pre_auction]
+    required_lookback: "none"
+    minimum_history: "none"
+    availability_provenance: "known exactly at announcement time"
+    missingness_meaning: "never missing"
+    schema_period_limitations: "none"
+    feature_role: predictor
+    default_tier: core
+    leakage_risk: "none"
+    leakage_mitigation: "n/a"
+
+  - canonical_feature_name: announcement_day_of_week
+    source_family: auction_structure
+    source_field_or_derivation: "auction_candidate_features.add_calendar_features: announcemt_date.dt.dayofweek"
+    description: "Day of week (0=Monday .. 6=Sunday) of the announcement date."
+    economic_rationale: "Verified (artifacts/phase_3_primary_dealer_integration.md): the overwhelming majority of announcements fall on Thursday, the same day NY Fed publishes dealer statistics -- worth capturing directly as a predictor, not only via the safe-availability join logic."
+    transformation: "date component extraction"
+    unit: "day-of-week code, 0-6"
+    dtype: "int32"
+    applicable_forecast_cutoff: [announcement, pre_auction]
+    required_lookback: "none"
+    minimum_history: "none"
+    availability_provenance: "known exactly at announcement time"
+    missingness_meaning: "never missing"
+    schema_period_limitations: "none"
+    feature_role: predictor
+    default_tier: core
+    leakage_risk: "none"
+    leakage_mitigation: "n/a"
+
+  # ============================================================
+  # Auction structure predictors (extended -- historical/trailing)
+  # ============================================================
+
+  - canonical_feature_name: previous_same_tenor_offering_amt
+    source_family: auction_structure
+    source_field_or_derivation: "auction_candidate_features.add_previous_same_tenor_features: merge_asof(backward, allow_exact_matches=False) per tenor"
+    description: "The offering amount of the most recent strictly-earlier same-tenor auction."
+    economic_rationale: "Recent same-tenor supply is a natural anchor for what 'normal' issuance looks like for this tenor right now."
+    transformation: "as-of lookup, strictly excluding same-day announcements"
+    unit: "USD"
+    dtype: "float64"
+    applicable_forecast_cutoff: [announcement, pre_auction]
+    required_lookback: "one prior same-tenor announcement"
+    minimum_history: "the tenor's own first announcement (e.g. 2020-05-20 for 20-Year)"
+    availability_provenance: "derived entirely from strictly-earlier announcements, each already public by construction"
+    missingness_meaning: "missing for a tenor's first-ever announcement in this project's history -- never backfilled"
+    schema_period_limitations: "20-Year: missing before its 2020 reintroduction's second auction"
+    feature_role: predictor
+    default_tier: extended
+    leakage_risk: "same-day announcement ties (verified: 35 real rows in this project's data) could make two simultaneous announcements appear to precede each other"
+    leakage_mitigation: "merge_asof allow_exact_matches=False structurally excludes same-day matches; tested in tests/test_auction_candidate_features.py"
+
+  - canonical_feature_name: change_in_offering_amt_vs_previous_same_tenor
+    source_family: auction_structure
+    source_field_or_derivation: "auction_candidate_features.add_previous_same_tenor_features: offering_amt - previous_same_tenor_offering_amt"
+    description: "This auction's offering amount minus the previous same-tenor auction's offering amount."
+    economic_rationale: "A supply increase or decrease relative to the tenor's own recent norm is a more direct 'surprise' signal than the level alone."
+    transformation: "subtraction"
+    unit: "USD"
+    dtype: "float64"
+    applicable_forecast_cutoff: [announcement, pre_auction]
+    required_lookback: "one prior same-tenor announcement"
+    minimum_history: "same as previous_same_tenor_offering_amt"
+    availability_provenance: "same as previous_same_tenor_offering_amt"
+    missingness_meaning: "same as previous_same_tenor_offering_amt"
+    schema_period_limitations: "same as previous_same_tenor_offering_amt"
+    feature_role: predictor
+    default_tier: extended
+    leakage_risk: "same as previous_same_tenor_offering_amt"
+    leakage_mitigation: "same as previous_same_tenor_offering_amt"
+
+  - canonical_feature_name: days_since_prior_same_tenor_auction
+    source_family: auction_structure
+    source_field_or_derivation: "auction_candidate_features.add_previous_same_tenor_features: auction_date - previous same-tenor auction_date"
+    description: "Calendar days since the previous same-tenor auction was actually held."
+    economic_rationale: "A longer or shorter gap since the last same-tenor auction can indicate calendar irregularities (e.g. debt-limit-driven schedule shifts) relevant to market absorption capacity."
+    transformation: "date subtraction on an as-of lookup"
+    unit: "days"
+    dtype: "float64"
+    applicable_forecast_cutoff: [announcement, pre_auction]
+    required_lookback: "one prior same-tenor announcement"
+    minimum_history: "same as previous_same_tenor_offering_amt"
+    availability_provenance: "both dates known no later than this row's own announcement"
+    missingness_meaning: "same as previous_same_tenor_offering_amt"
+    schema_period_limitations: "same as previous_same_tenor_offering_amt"
+    feature_role: predictor
+    default_tier: extended
+    leakage_risk: "same as previous_same_tenor_offering_amt"
+    leakage_mitigation: "same as previous_same_tenor_offering_amt"
+
+  - canonical_feature_name: n_prior_reopenings_of_cusip
+    source_family: auction_structure
+    source_field_or_derivation: "auction_candidate_features.add_prior_reopening_count: cumulative count of strictly-earlier same-CUSIP reopenings"
+    description: "How many earlier auctions share this row's CUSIP and are themselves reopenings."
+    economic_rationale: "A security reopened many times is typically more seasoned/liquid than a freshly-issued one, which can affect dealer willingness to warehouse further reopenings."
+    transformation: "as-of cumulative count, strictly excluding same-day announcements"
+    unit: "count"
+    dtype: "int64"
+    applicable_forecast_cutoff: [announcement, pre_auction]
+    required_lookback: "full same-CUSIP history to date"
+    minimum_history: "none (0 for a CUSIP's first appearance)"
+    availability_provenance: "derived entirely from strictly-earlier announcements"
+    missingness_meaning: "never missing (0 rather than missing for a CUSIP's first appearance)"
+    schema_period_limitations: "none"
+    feature_role: predictor
+    default_tier: extended
+    leakage_risk: "same-day reopenings of the same CUSIP (not observed in this project's data, but structurally possible) could count each other"
+    leakage_mitigation: "as-of lookup against a per-distinct-date cumulative count, never same-day precedence; tested"
+
+  - canonical_feature_name: trailing_nominal_coupon_supply_8
+    source_family: auction_structure
+    source_field_or_derivation: "auction_candidate_features.add_trailing_supply_features: trailing sum of offering_amt over the 8 most recent distinct prior announcement dates, all tenors pooled"
+    description: "Total announced nominal-coupon offering amount over the 8 most recent distinct prior announcement dates (approximately one month, given this project's ~6.4 announcements/month cadence)."
+    economic_rationale: "Aggregate recent supply across all tenors is a proxy for how much new Treasury paper the market has had to absorb lately, independent of this auction's own tenor."
+    transformation: "distinct-date trailing sum, window pre-specified by cadence"
+    unit: "USD"
+    dtype: "float64"
+    applicable_forecast_cutoff: [announcement, pre_auction]
+    required_lookback: "8 distinct prior announcement dates"
+    minimum_history: "the first 8 distinct announcement dates of this project's sample"
+    availability_provenance: "derived entirely from strictly-earlier announcements"
+    missingness_meaning: "missing until 8 distinct prior announcement dates exist"
+    schema_period_limitations: "none"
+    feature_role: predictor
+    default_tier: extended
+    leakage_risk: "a same-day batch of auctions (verified common: up to 4 auctions announced on one date) could otherwise see each other's supply"
+    leakage_mitigation: "same-day auctions are aggregated into one shift(1)-excluded slot before the rolling window; tested"
+
+  - canonical_feature_name: trailing_nominal_coupon_supply_26
+    source_family: auction_structure
+    source_field_or_derivation: "auction_candidate_features.add_trailing_supply_features: trailing sum of offering_amt over the 26 most recent distinct prior announcement dates, all tenors pooled"
+    description: "Total announced nominal-coupon offering amount over the 26 most recent distinct prior announcement dates (approximately one quarter)."
+    economic_rationale: "Same as trailing_nominal_coupon_supply_8, at a longer (quarterly) horizon."
+    transformation: "distinct-date trailing sum, window pre-specified by cadence"
+    unit: "USD"
+    dtype: "float64"
+    applicable_forecast_cutoff: [announcement, pre_auction]
+    required_lookback: "26 distinct prior announcement dates"
+    minimum_history: "the first 26 distinct announcement dates of this project's sample"
+    availability_provenance: "derived entirely from strictly-earlier announcements"
+    missingness_meaning: "missing until 26 distinct prior announcement dates exist"
+    schema_period_limitations: "none"
+    feature_role: predictor
+    default_tier: extended
+    leakage_risk: "same as trailing_nominal_coupon_supply_8"
+    leakage_mitigation: "same as trailing_nominal_coupon_supply_8"
+
+  - canonical_feature_name: trailing_same_tenor_supply_4
+    source_family: auction_structure
+    source_field_or_derivation: "auction_candidate_features.add_trailing_supply_features: trailing sum of offering_amt over the 4 most recent distinct prior same-tenor announcement dates"
+    description: "Total announced offering amount over the 4 most recent distinct prior announcements of this row's own tenor."
+    economic_rationale: "Recent same-tenor supply trend, independent of the immediately-previous single auction's level."
+    transformation: "distinct-date trailing sum within tenor, window pre-specified by cadence"
+    unit: "USD"
+    dtype: "float64"
+    applicable_forecast_cutoff: [announcement, pre_auction]
+    required_lookback: "4 distinct prior same-tenor announcement dates"
+    minimum_history: "the tenor's own first 4 distinct announcement dates"
+    availability_provenance: "derived entirely from strictly-earlier same-tenor announcements"
+    missingness_meaning: "missing until 4 distinct prior same-tenor announcement dates exist"
+    schema_period_limitations: "20-Year: missing for its first several post-2020 auctions"
+    feature_role: predictor
+    default_tier: extended
+    leakage_risk: "verified same-day same-tenor ties (35 rows) could otherwise see each other's supply"
+    leakage_mitigation: "same-day same-tenor auctions are aggregated into one shift(1)-excluded slot before the rolling window; tested directly against this real scenario"
+
+  - canonical_feature_name: trailing_same_tenor_supply_8
+    source_family: auction_structure
+    source_field_or_derivation: "auction_candidate_features.add_trailing_supply_features: trailing sum of offering_amt over the 8 most recent distinct prior same-tenor announcement dates"
+    description: "Total announced offering amount over the 8 most recent distinct prior announcements of this row's own tenor."
+    economic_rationale: "Same as trailing_same_tenor_supply_4, at a longer lookback."
+    transformation: "distinct-date trailing sum within tenor, window pre-specified by cadence"
+    unit: "USD"
+    dtype: "float64"
+    applicable_forecast_cutoff: [announcement, pre_auction]
+    required_lookback: "8 distinct prior same-tenor announcement dates"
+    minimum_history: "the tenor's own first 8 distinct announcement dates"
+    availability_provenance: "derived entirely from strictly-earlier same-tenor announcements"
+    missingness_meaning: "missing until 8 distinct prior same-tenor announcement dates exist"
+    schema_period_limitations: "20-Year: missing for a longer initial span than trailing_same_tenor_supply_4"
+    feature_role: predictor
+    default_tier: extended
+    leakage_risk: "same as trailing_same_tenor_supply_4"
+    leakage_mitigation: "same as trailing_same_tenor_supply_4"
+
+  # ============================================================
+  # NY Fed Primary Dealer Statistics predictors (core)
+  # ============================================================
+
+  - canonical_feature_name: dealer_net_position_total_ex_tips_harmonized
+    source_family: dealer_stats
+    source_field_or_derivation: "dealer_candidate_features.add_harmonized_positions; as-of joined via dealer_join.as_of_join"
+    description: "Whole-curve net (long-minus-short) Treasury (excl. TIPS) dealer position, harmonized across schema periods back to 2001-07-04."
+    economic_rationale: "General dealer balance-sheet usage/capacity signal, independent of any single maturity bucket; the harmonized version maximizes historical consistency (Phase 3 acceptance review)."
+    transformation: "cross-schema-period harmonization (combine_first of disjoint legacy/modern windows); as-of join on publication_safe_available_date"
+    unit: "millions of dollars"
+    dtype: "float64"
+    applicable_forecast_cutoff: [announcement, pre_auction]
+    required_lookback: "the most recent safely-available weekly release"
+    minimum_history: "2001-07-04"
+    availability_provenance: "publication_safe_available_date <= cutoff, via as-of join (never observation_date)"
+    missingness_meaning: "missing only if no dealer release was safely available before the cutoff (verified: 0 rows in the ordinary modeling sample)"
+    schema_period_limitations: "none for this harmonized column specifically"
+    feature_role: predictor
+    default_tier: core
+    leakage_risk: "publication-timing leakage if joined on observation date instead of publication_safe_available_date"
+    leakage_mitigation: "as-of join keyed on publication_safe_available_date, structurally backward-only (pandas.merge_asof direction=backward)"
+
+  - canonical_feature_name: dealer_net_position_total_ex_tips_harmonized_zscore_52w
+    source_family: dealer_stats
+    source_field_or_derivation: "dealer_candidate_features.add_rolling_zscore applied to the harmonized total, shift(1) before rolling"
+    description: "52-week rolling z-score of the harmonized whole-curve net position, using only strictly preceding weeks."
+    economic_rationale: "Whether current dealer inventory is unusually high/low relative to its own recent history, scale-independent of the raw level's long-run growth trend."
+    transformation: "(level - trailing 52w mean) / trailing 52w std, shift(1) before rolling"
+    unit: "standard deviations"
+    dtype: "float64"
+    applicable_forecast_cutoff: [announcement, pre_auction]
+    required_lookback: "13 (min_periods) to 52 strictly preceding weekly releases"
+    minimum_history: "~13 weeks after 2001-07-04"
+    availability_provenance: "computed once over the source's own weekly series (which has zero gaps) before the auction join; each week's value already depends only on strictly-earlier weeks"
+    missingness_meaning: "missing until 13 strictly-preceding weeks of the harmonized series exist"
+    schema_period_limitations: "none beyond the harmonized level's own"
+    feature_role: predictor
+    default_tier: core
+    leakage_risk: "including the current week's own observation in its own rolling mean/std"
+    leakage_mitigation: "shift(1) before rolling, tested in tests/test_dealer_candidate_features.py"
+
+  - canonical_feature_name: dealer_tenor_bucket_inventory_millions_harmonized
+    source_family: dealer_stats
+    source_field_or_derivation: "dealer_candidate_features.add_inventory_relative_to_offering_harmonized"
+    description: "The harmonized maturity-bucket net position matching this auction's own tenor."
+    economic_rationale: "Direct, tenor-matched inventory measure -- how much of this specific duration segment dealers already hold, with maximal historical consistency."
+    transformation: "tenor-to-bucket lookup on the harmonized series"
+    unit: "millions of dollars"
+    dtype: "float64"
+    applicable_forecast_cutoff: [announcement, pre_auction]
+    required_lookback: "the most recent safely-available weekly release"
+    minimum_history: "2001-07-04 (all tenors except 5-Year, which uses its own directly-extended fine bucket instead)"
+    availability_provenance: "same as dealer_net_position_total_ex_tips_harmonized"
+    missingness_meaning: "same as dealer_net_position_total_ex_tips_harmonized"
+    schema_period_limitations: "before 2022-01-05, 20-Year and 30-Year share one combined >11-year bucket (no separate exposure)"
+    feature_role: predictor
+    default_tier: core
+    leakage_risk: "same as dealer_net_position_total_ex_tips_harmonized"
+    leakage_mitigation: "same as dealer_net_position_total_ex_tips_harmonized"
+
+  - canonical_feature_name: dealer_inventory_to_offering_ratio_harmonized
+    source_family: dealer_stats
+    source_field_or_derivation: "dealer_candidate_features.add_inventory_relative_to_offering_harmonized: bucket_value_millions * 1e6 / offering_amt"
+    description: "The harmonized tenor-matched dealer inventory expressed as a multiple of this auction's own offering amount."
+    economic_rationale: "How large is dealers' existing inventory in this maturity segment relative to what is about to be newly supplied -- a direct absorption-capacity signal."
+    transformation: "unit-converted ratio (millions -> dollars) against offering_amt"
+    unit: "ratio (dealer inventory dollars / offering dollars)"
+    dtype: "float64"
+    applicable_forecast_cutoff: [announcement, pre_auction]
+    required_lookback: "same as dealer_tenor_bucket_inventory_millions_harmonized"
+    minimum_history: "same as dealer_tenor_bucket_inventory_millions_harmonized"
+    availability_provenance: "same as dealer_tenor_bucket_inventory_millions_harmonized"
+    missingness_meaning: "same as dealer_tenor_bucket_inventory_millions_harmonized"
+    schema_period_limitations: "same as dealer_tenor_bucket_inventory_millions_harmonized"
+    feature_role: predictor
+    default_tier: core
+    leakage_risk: "same as dealer_tenor_bucket_inventory_millions_harmonized"
+    leakage_mitigation: "same as dealer_tenor_bucket_inventory_millions_harmonized"
+
+  - canonical_feature_name: dealer_long_short_imbalance
+    source_family: dealer_stats
+    source_field_or_derivation: "dealer_candidate_features.add_cross_maturity_imbalance: (11-21y + >21y) - (bills + <=2y coupons)"
+    description: "Total long-end net position minus total short-end net position."
+    economic_rationale: "A structural long/short duration tilt in dealer inventory, relevant to willingness to absorb further duration supply."
+    transformation: "plain addition/subtraction, NA-propagating"
+    unit: "millions of dollars"
+    dtype: "float64"
+    applicable_forecast_cutoff: [announcement, pre_auction]
+    required_lookback: "the most recent safely-available weekly release"
+    minimum_history: "2022-01-05 (requires the fine 11-21y/>21y buckets)"
+    availability_provenance: "same as dealer_net_position_total_ex_tips_harmonized"
+    missingness_meaning: "missing before 2022-01-05, when the long-end fine buckets do not yet exist -- never treated as zero"
+    schema_period_limitations: "requires the 2022-01-05 fine long-maturity buckets"
+    feature_role: predictor
+    default_tier: core
+    leakage_risk: "same as dealer_net_position_total_ex_tips_harmonized"
+    leakage_mitigation: "same as dealer_net_position_total_ex_tips_harmonized"
+
+  - canonical_feature_name: dealer_long_short_imbalance_zscore_52w
+    source_family: dealer_stats
+    source_field_or_derivation: "dealer_candidate_features.add_rolling_zscore applied to dealer_long_short_imbalance"
+    description: "52-week rolling z-score of dealer_long_short_imbalance, using only strictly preceding weeks."
+    economic_rationale: "Scale-independent version of the long/short tilt, since the raw imbalance level is dominated by overall market growth."
+    transformation: "same as dealer_net_position_total_ex_tips_harmonized_zscore_52w"
+    unit: "standard deviations"
+    dtype: "float64"
+    applicable_forecast_cutoff: [announcement, pre_auction]
+    required_lookback: "13 to 52 strictly preceding weeks of dealer_long_short_imbalance"
+    minimum_history: "~13 weeks after 2022-01-05"
+    availability_provenance: "same as dealer_net_position_total_ex_tips_harmonized_zscore_52w"
+    missingness_meaning: "missing before the imbalance itself exists, plus the rolling warm-up period"
+    schema_period_limitations: "same as dealer_long_short_imbalance"
+    feature_role: predictor
+    default_tier: core
+    leakage_risk: "same as dealer_net_position_total_ex_tips_harmonized_zscore_52w"
+    leakage_mitigation: "same as dealer_net_position_total_ex_tips_harmonized_zscore_52w"
+
+  - canonical_feature_name: dealer_repo_treasury_ex_tips_total
+    source_family: dealer_stats
+    source_field_or_derivation: "dealer_stats_schema.SELECTED_SERIES (PDSORA-UTSETTOT); as-of joined"
+    description: "Total repurchase agreements collateralized by Treasuries (excl. TIPS)."
+    economic_rationale: "How much of dealers' own inventory is already financed/levered -- less unencumbered balance-sheet room implies less capacity for new supply."
+    transformation: "as-of join, no further transform"
+    unit: "millions of dollars"
+    dtype: "float64"
+    applicable_forecast_cutoff: [announcement, pre_auction]
+    required_lookback: "the most recent safely-available weekly release"
+    minimum_history: "2013-04-03 (not extended pre-2013 -- cannot be cleanly separated from TIPS, Phase 3 acceptance review)"
+    availability_provenance: "same as dealer_net_position_total_ex_tips_harmonized"
+    missingness_meaning: "missing before 2013-04-03, or a genuine source-reported '*' for the nearest release"
+    schema_period_limitations: "counterparty-segmentation methodology revised 2022-01-05 (published total remains one continuous keyid)"
+    feature_role: predictor
+    default_tier: core
+    leakage_risk: "same as dealer_net_position_total_ex_tips_harmonized"
+    leakage_mitigation: "same as dealer_net_position_total_ex_tips_harmonized"
+
+  - canonical_feature_name: dealer_reverse_repo_treasury_ex_tips_total
+    source_family: dealer_stats
+    source_field_or_derivation: "dealer_stats_schema.SELECTED_SERIES (PDSIRRA-UTSETTOT); as-of joined"
+    description: "Total reverse repurchase agreements collateralized by Treasuries (excl. TIPS)."
+    economic_rationale: "Dealers' own cash-financing capacity/matched-book activity; compared against the repo side, a proxy for collateral scarcity. Never summed with repo (opposite legs)."
+    transformation: "as-of join, no further transform"
+    unit: "millions of dollars"
+    dtype: "float64"
+    applicable_forecast_cutoff: [announcement, pre_auction]
+    required_lookback: "the most recent safely-available weekly release"
+    minimum_history: "2013-04-03"
+    availability_provenance: "same as dealer_repo_treasury_ex_tips_total"
+    missingness_meaning: "same as dealer_repo_treasury_ex_tips_total"
+    schema_period_limitations: "same as dealer_repo_treasury_ex_tips_total"
+    feature_role: predictor
+    default_tier: core
+    leakage_risk: "same as dealer_repo_treasury_ex_tips_total"
+    leakage_mitigation: "same as dealer_repo_treasury_ex_tips_total"
+
+  - canonical_feature_name: dealer_fails_to_deliver_treasury_ex_tips
+    source_family: dealer_stats
+    source_field_or_derivation: "dealer_stats_schema.SELECTED_SERIES (PDFTD-USTET); as-of joined"
+    description: "Settlement fails to deliver, Treasury excl. TIPS."
+    economic_rationale: "A direct, widely-used indicator of Treasury-market settlement stress/collateral scarcity -- elevated fails ahead of an auction can indicate already-strained plumbing."
+    transformation: "as-of join, no further transform"
+    unit: "millions of dollars"
+    dtype: "float64"
+    applicable_forecast_cutoff: [announcement, pre_auction]
+    required_lookback: "the most recent safely-available weekly release"
+    minimum_history: "2013-04-03 (pre-2013 source scope explicitly includes TIPS, not comparable)"
+    availability_provenance: "same as dealer_repo_treasury_ex_tips_total"
+    missingness_meaning: "same as dealer_repo_treasury_ex_tips_total"
+    schema_period_limitations: "same as dealer_repo_treasury_ex_tips_total"
+    feature_role: predictor
+    default_tier: core
+    leakage_risk: "same as dealer_repo_treasury_ex_tips_total"
+    leakage_mitigation: "same as dealer_repo_treasury_ex_tips_total"
+
+  - canonical_feature_name: dealer_fails_to_receive_treasury_ex_tips
+    source_family: dealer_stats
+    source_field_or_derivation: "dealer_stats_schema.SELECTED_SERIES (PDFTR-USTET); as-of joined"
+    description: "Settlement fails to receive, Treasury excl. TIPS -- the complementary settlement-stress indicator."
+    economic_rationale: "Same as dealer_fails_to_deliver_treasury_ex_tips."
+    transformation: "as-of join, no further transform"
+    unit: "millions of dollars"
+    dtype: "float64"
+    applicable_forecast_cutoff: [announcement, pre_auction]
+    required_lookback: "the most recent safely-available weekly release"
+    minimum_history: "2013-04-03"
+    availability_provenance: "same as dealer_repo_treasury_ex_tips_total"
+    missingness_meaning: "same as dealer_repo_treasury_ex_tips_total"
+    schema_period_limitations: "same as dealer_repo_treasury_ex_tips_total"
+    feature_role: predictor
+    default_tier: core
+    leakage_risk: "same as dealer_repo_treasury_ex_tips_total"
+    leakage_mitigation: "same as dealer_repo_treasury_ex_tips_total"
+
+  # ============================================================
+  # NY Fed Primary Dealer Statistics predictors (extended)
+  # ============================================================
+
+  - canonical_feature_name: dealer_tenor_bucket_inventory_millions
+    source_family: dealer_stats
+    source_field_or_derivation: "dealer_candidate_features.add_inventory_relative_to_offering"
+    description: "The fine-grained (non-harmonized) maturity-bucket net position matching this auction's tenor."
+    economic_rationale: "Same as the harmonized version, at finer maturity-bucket granularity where available."
+    transformation: "tenor-to-bucket lookup on the modern fine-grained series"
+    unit: "millions of dollars"
+    dtype: "float64"
+    applicable_forecast_cutoff: [announcement, pre_auction]
+    required_lookback: "the most recent safely-available weekly release"
+    minimum_history: "2013-04-03 for most tenors; 2022-01-05 for 20-Year/30-Year fine buckets; 2001-07-04 for 2/3/5-Year (directly extended)"
+    availability_provenance: "same as dealer_net_position_total_ex_tips_harmonized"
+    missingness_meaning: "same as dealer_net_position_total_ex_tips_harmonized, plus regime-not-yet-started for the fine long buckets before 2022-01-05"
+    schema_period_limitations: "20-Year/30-Year fine buckets only from 2022-01-05 -- redundant with, and sparser than, the harmonized core feature"
+    feature_role: predictor
+    default_tier: extended
+    leakage_risk: "same as dealer_net_position_total_ex_tips_harmonized"
+    leakage_mitigation: "same as dealer_net_position_total_ex_tips_harmonized"
+
+  - canonical_feature_name: dealer_inventory_to_offering_ratio
+    source_family: dealer_stats
+    source_field_or_derivation: "dealer_candidate_features.add_inventory_relative_to_offering"
+    description: "The fine-grained tenor-matched dealer inventory expressed as a multiple of the offering amount."
+    economic_rationale: "Same as the harmonized version, redundant with it except at finer bucket granularity."
+    transformation: "unit-converted ratio against offering_amt"
+    unit: "ratio"
+    dtype: "float64"
+    applicable_forecast_cutoff: [announcement, pre_auction]
+    required_lookback: "same as dealer_tenor_bucket_inventory_millions"
+    minimum_history: "same as dealer_tenor_bucket_inventory_millions"
+    availability_provenance: "same as dealer_tenor_bucket_inventory_millions"
+    missingness_meaning: "same as dealer_tenor_bucket_inventory_millions"
+    schema_period_limitations: "same as dealer_tenor_bucket_inventory_millions"
+    feature_role: predictor
+    default_tier: extended
+    leakage_risk: "same as dealer_tenor_bucket_inventory_millions"
+    leakage_mitigation: "same as dealer_tenor_bucket_inventory_millions"
+
+  - canonical_feature_name: dealer_net_position_total_ex_tips
+    source_family: dealer_stats
+    source_field_or_derivation: "dealer_stats_schema.SELECTED_SERIES (PDPOSGST-TOT); as-of joined"
+    description: "Modern-API-only whole-curve net Treasury (excl. TIPS) position -- redundant with the harmonized total from 2013-04-03 onward."
+    economic_rationale: "Sanity-check total, kept as an extended-tier alternative to the harmonized core feature."
+    transformation: "as-of join, no further transform"
+    unit: "millions of dollars"
+    dtype: "float64"
+    applicable_forecast_cutoff: [announcement, pre_auction]
+    required_lookback: "the most recent safely-available weekly release"
+    minimum_history: "2013-04-03"
+    availability_provenance: "same as dealer_repo_treasury_ex_tips_total"
+    missingness_meaning: "same as dealer_repo_treasury_ex_tips_total"
+    schema_period_limitations: "sparser than the harmonized core feature; deliberately redundant, kept for direct-source-value comparability"
+    feature_role: predictor
+    default_tier: extended
+    leakage_risk: "same as dealer_repo_treasury_ex_tips_total"
+    leakage_mitigation: "same as dealer_repo_treasury_ex_tips_total"
+
+  - canonical_feature_name: dealer_securities_borrowed_treasury_ex_tips_total
+    source_family: dealer_stats
+    source_field_or_derivation: "dealer_stats_schema.SELECTED_SERIES (PDSIOSB-UTSETTOT); as-of joined"
+    description: "Treasury securities dealers have borrowed (excl. TIPS)."
+    economic_rationale: "Elevated borrowing is a classic signal of collateral specialness/short-covering pressure."
+    transformation: "as-of join, no further transform"
+    unit: "millions of dollars"
+    dtype: "float64"
+    applicable_forecast_cutoff: [announcement, pre_auction]
+    required_lookback: "the most recent safely-available weekly release"
+    minimum_history: "2013-04-03 (a genuinely post-2013 reporting concept -- Phase 3 acceptance review)"
+    availability_provenance: "same as dealer_repo_treasury_ex_tips_total"
+    missingness_meaning: "same as dealer_repo_treasury_ex_tips_total, plus a hard structural floor: the concept itself did not exist before 2013-04-03"
+    schema_period_limitations: "no pre-2013 history exists at all for this concept, by construction"
+    feature_role: predictor
+    default_tier: extended
+    leakage_risk: "same as dealer_repo_treasury_ex_tips_total"
+    leakage_mitigation: "same as dealer_repo_treasury_ex_tips_total"
+
+  - canonical_feature_name: dealer_securities_lent_treasury_ex_tips_total
+    source_family: dealer_stats
+    source_field_or_derivation: "dealer_stats_schema.SELECTED_SERIES (PDSOOS-UTSETTOT); as-of joined"
+    description: "Treasury securities dealers have lent out from inventory (excl. TIPS) -- the complement of securities-borrowed."
+    economic_rationale: "A large lent-out position can indicate dealers are earning financing income on inventory not being used to distribute supply. Never summed with securities-borrowed (opposite legs)."
+    transformation: "as-of join, no further transform"
+    unit: "millions of dollars"
+    dtype: "float64"
+    applicable_forecast_cutoff: [announcement, pre_auction]
+    required_lookback: "the most recent safely-available weekly release"
+    minimum_history: "2013-04-03"
+    availability_provenance: "same as dealer_securities_borrowed_treasury_ex_tips_total"
+    missingness_meaning: "same as dealer_securities_borrowed_treasury_ex_tips_total; also has a documented, real, scattered source '*' pattern (581 auctions, verified in Phase 3 review)"
+    schema_period_limitations: "same as dealer_securities_borrowed_treasury_ex_tips_total"
+    feature_role: predictor
+    default_tier: extended
+    leakage_risk: "same as dealer_repo_treasury_ex_tips_total"
+    leakage_mitigation: "same as dealer_repo_treasury_ex_tips_total"
+
+  - canonical_feature_name: dealer_transaction_volume_total_ex_tips
+    source_family: dealer_stats
+    source_field_or_derivation: "dealer_stats_schema.SELECTED_SERIES (PDGSWOEXTTOT); as-of joined"
+    description: "Aggregate weekly Treasury (excl. TIPS) turnover across all maturities and counterparty types."
+    economic_rationale: "A market-activity/liquidity signal distinct from a static position level: a large position amid heavy turnover differs from the same position amid a frozen market."
+    transformation: "as-of join, no further transform"
+    unit: "millions of dollars"
+    dtype: "float64"
+    applicable_forecast_cutoff: [announcement, pre_auction]
+    required_lookback: "the most recent safely-available weekly release"
+    minimum_history: "2013-04-03 (pre-2013 aggregate cannot be cleanly separated from TIPS -- Phase 3 acceptance review)"
+    availability_provenance: "same as dealer_repo_treasury_ex_tips_total"
+    missingness_meaning: "same as dealer_repo_treasury_ex_tips_total"
+    schema_period_limitations: "same as dealer_repo_treasury_ex_tips_total"
+    feature_role: predictor
+    default_tier: extended
+    leakage_risk: "same as dealer_repo_treasury_ex_tips_total"
+    leakage_mitigation: "same as dealer_repo_treasury_ex_tips_total"
+
+  - canonical_feature_name: dealer_repo_treasury_ex_tips_total_chg_4w
+    source_family: dealer_stats
+    source_field_or_derivation: "dealer_candidate_features.add_trailing_changes: level - level.shift(4), computed before the auction join"
+    description: "4-week trailing change in dealer_repo_treasury_ex_tips_total."
+    economic_rationale: "The direction/speed of change in dealer repo financing can matter as much as its level."
+    transformation: "trailing difference over the source's own weekly series, before the auction join"
+    unit: "millions of dollars"
+    dtype: "float64"
+    applicable_forecast_cutoff: [announcement, pre_auction]
+    required_lookback: "4 strictly preceding weekly releases"
+    minimum_history: "~4 weeks after 2013-04-03"
+    availability_provenance: "same as dealer_repo_treasury_ex_tips_total"
+    missingness_meaning: "missing until 4 preceding weekly observations exist, in addition to the level's own missingness"
+    schema_period_limitations: "same as dealer_repo_treasury_ex_tips_total"
+    feature_role: predictor
+    default_tier: extended
+    leakage_risk: "including the current week's own level in the difference"
+    leakage_mitigation: "plain trailing difference computed on the source's own pre-join weekly series, which by construction cannot use a future week"
+
+  - canonical_feature_name: dealer_reverse_repo_treasury_ex_tips_total_chg_4w
+    source_family: dealer_stats
+    source_field_or_derivation: "dealer_candidate_features.add_trailing_changes applied to dealer_reverse_repo_treasury_ex_tips_total"
+    description: "4-week trailing change in dealer_reverse_repo_treasury_ex_tips_total."
+    economic_rationale: "Same rationale as dealer_repo_treasury_ex_tips_total_chg_4w, for the reverse-repo side."
+    transformation: "same as dealer_repo_treasury_ex_tips_total_chg_4w"
+    unit: "millions of dollars"
+    dtype: "float64"
+    applicable_forecast_cutoff: [announcement, pre_auction]
+    required_lookback: "4 strictly preceding weekly releases"
+    minimum_history: "~4 weeks after 2013-04-03"
+    availability_provenance: "same as dealer_repo_treasury_ex_tips_total_chg_4w"
+    missingness_meaning: "same as dealer_repo_treasury_ex_tips_total_chg_4w"
+    schema_period_limitations: "same as dealer_repo_treasury_ex_tips_total_chg_4w"
+    feature_role: predictor
+    default_tier: extended
+    leakage_risk: "same as dealer_repo_treasury_ex_tips_total_chg_4w"
+    leakage_mitigation: "same as dealer_repo_treasury_ex_tips_total_chg_4w"
+
+  - canonical_feature_name: dealer_fails_to_deliver_treasury_ex_tips_chg_4w
+    source_family: dealer_stats
+    source_field_or_derivation: "dealer_candidate_features.add_trailing_changes applied to dealer_fails_to_deliver_treasury_ex_tips"
+    description: "4-week trailing change in dealer_fails_to_deliver_treasury_ex_tips."
+    economic_rationale: "Whether settlement stress is building or easing, not just its current level."
+    transformation: "same as dealer_repo_treasury_ex_tips_total_chg_4w"
+    unit: "millions of dollars"
+    dtype: "float64"
+    applicable_forecast_cutoff: [announcement, pre_auction]
+    required_lookback: "4 strictly preceding weekly releases"
+    minimum_history: "~4 weeks after 2013-04-03"
+    availability_provenance: "same as dealer_repo_treasury_ex_tips_total_chg_4w"
+    missingness_meaning: "same as dealer_repo_treasury_ex_tips_total_chg_4w"
+    schema_period_limitations: "same as dealer_repo_treasury_ex_tips_total_chg_4w"
+    feature_role: predictor
+    default_tier: extended
+    leakage_risk: "same as dealer_repo_treasury_ex_tips_total_chg_4w"
+    leakage_mitigation: "same as dealer_repo_treasury_ex_tips_total_chg_4w"
+
+  - canonical_feature_name: dealer_net_position_total_ex_tips_harmonized_chg_13w
+    source_family: dealer_stats
+    source_field_or_derivation: "dealer_candidate_features.add_trailing_changes applied to the harmonized total, window=13"
+    description: "13-week (approximately one quarter) trailing change in the harmonized whole-curve net position."
+    economic_rationale: "A longer-horizon trend complement to the 52-week z-score, at the harmonized (maximal-history) series."
+    transformation: "trailing difference over the source's own weekly series, before the auction join"
+    unit: "millions of dollars"
+    dtype: "float64"
+    applicable_forecast_cutoff: [announcement, pre_auction]
+    required_lookback: "13 strictly preceding weekly releases"
+    minimum_history: "~13 weeks after 2001-07-04"
+    availability_provenance: "same as dealer_net_position_total_ex_tips_harmonized"
+    missingness_meaning: "missing until 13 preceding weekly observations exist"
+    schema_period_limitations: "none beyond the harmonized level's own"
+    feature_role: predictor
+    default_tier: extended
+    leakage_risk: "same as dealer_repo_treasury_ex_tips_total_chg_4w"
+    leakage_mitigation: "same as dealer_repo_treasury_ex_tips_total_chg_4w"
+
+  # ============================================================
+  # Treasury daily par yield curve predictors (core)
+  # ============================================================
+
+  - canonical_feature_name: matched_tenor_par_yield_percent
+    source_family: treasury_rates
+    source_field_or_derivation: "treasury_rates_candidate_features.add_tenor_matched_rate_features"
+    description: "The par yield for the maturity exactly matching this auction's own tenor."
+    economic_rationale: "The single most direct pre-auction rate-level signal for this specific security."
+    transformation: "tenor-to-maturity-label lookup on the as-of-joined rate table"
+    unit: "percent"
+    dtype: "float64"
+    applicable_forecast_cutoff: [announcement, pre_auction]
+    required_lookback: "the most recent safely-available trading day's rate"
+    minimum_history: "2009-01-01"
+    availability_provenance: "publication_safe_available_date (next full business day after rate_date) <= cutoff"
+    missingness_meaning: "missing only if no rate was safely available before the cutoff (verified: 0 rows in the ordinary modeling sample) or the source published an empty value for that maturity/date"
+    schema_period_limitations: "none for this project's 2010+ sample (all 7 nominal-coupon tenors verified present and non-empty throughout)"
+    feature_role: predictor
+    default_tier: core
+    leakage_risk: "a same-day rate could be treated as available before Treasury's own ~6:00 PM ET publication"
+    leakage_mitigation: "as-of join keyed on publication_safe_available_date = next full business day after rate_date, never rate_date itself"
+
+  - canonical_feature_name: matched_tenor_chg_5d_bps
+    source_family: treasury_rates
+    source_field_or_derivation: "treasury_rates_candidate_features.add_tenor_matched_rate_change_features (Phase 5 addition to the accepted Phase 4A module)"
+    description: "5-trading-day change in the tenor-matched par yield, in basis points."
+    economic_rationale: "Recent rate momentum in the specific tenor being auctioned."
+    transformation: "trailing difference over the source's own daily series (before the auction join), converted to basis points (x100)"
+    unit: "basis points"
+    dtype: "float64"
+    applicable_forecast_cutoff: [announcement, pre_auction]
+    required_lookback: "5 strictly preceding trading days"
+    minimum_history: "~1 trading week after 2009-01-01"
+    availability_provenance: "same as matched_tenor_par_yield_percent"
+    missingness_meaning: "missing until 5 preceding trading-day observations exist, in addition to the level's own missingness"
+    schema_period_limitations: "none"
+    feature_role: predictor
+    default_tier: core
+    leakage_risk: "including the current day's own change in a trailing-day-count window"
+    leakage_mitigation: "plain trailing difference over the source's own pre-join daily series, which cannot use a future day"
+
+  - canonical_feature_name: matched_tenor_chg_20d_bps
+    source_family: treasury_rates
+    source_field_or_derivation: "treasury_rates_candidate_features.add_tenor_matched_rate_change_features"
+    description: "20-trading-day (approximately one calendar month) change in the tenor-matched par yield, in basis points."
+    economic_rationale: "A longer-horizon rate-momentum complement to matched_tenor_chg_5d_bps."
+    transformation: "same as matched_tenor_chg_5d_bps"
+    unit: "basis points"
+    dtype: "float64"
+    applicable_forecast_cutoff: [announcement, pre_auction]
+    required_lookback: "20 strictly preceding trading days"
+    minimum_history: "~1 trading month after 2009-01-01"
+    availability_provenance: "same as matched_tenor_par_yield_percent"
+    missingness_meaning: "same as matched_tenor_chg_5d_bps"
+    schema_period_limitations: "none"
+    feature_role: predictor
+    default_tier: core
+    leakage_risk: "same as matched_tenor_chg_5d_bps"
+    leakage_mitigation: "same as matched_tenor_chg_5d_bps"
+
+  - canonical_feature_name: slope_2s10s_bps
+    source_family: treasury_rates
+    source_field_or_derivation: "treasury_rates_candidate_features.add_curve_slopes_and_curvature: (10 Yr - 2 Yr) * 100"
+    description: "10-Year minus 2-Year par yield, in basis points."
+    economic_rationale: "The single most-watched curve slope; regime information relevant to duration demand across all tenors."
+    transformation: "same-day level difference, converted to basis points"
+    unit: "basis points"
+    dtype: "float64"
+    applicable_forecast_cutoff: [announcement, pre_auction]
+    required_lookback: "the most recent safely-available trading day's rates for both maturities"
+    minimum_history: "2009-01-01"
+    availability_provenance: "same as matched_tenor_par_yield_percent, for both the 2 Yr and 10 Yr columns"
+    missingness_meaning: "missing only if either underlying maturity is missing"
+    schema_period_limitations: "none for this project's 2010+ sample"
+    feature_role: predictor
+    default_tier: core
+    leakage_risk: "same as matched_tenor_par_yield_percent"
+    leakage_mitigation: "same as matched_tenor_par_yield_percent"
+
+  - canonical_feature_name: slope_5s30s_bps
+    source_family: treasury_rates
+    source_field_or_derivation: "treasury_rates_candidate_features.add_curve_slopes_and_curvature: (30 Yr - 5 Yr) * 100"
+    description: "30-Year minus 5-Year par yield, in basis points."
+    economic_rationale: "The long-end curve slope, relevant to long-duration auction demand specifically."
+    transformation: "same as slope_2s10s_bps"
+    unit: "basis points"
+    dtype: "float64"
+    applicable_forecast_cutoff: [announcement, pre_auction]
+    required_lookback: "same as slope_2s10s_bps"
+    minimum_history: "2009-01-01"
+    availability_provenance: "same as slope_2s10s_bps"
+    missingness_meaning: "same as slope_2s10s_bps"
+    schema_period_limitations: "same as slope_2s10s_bps"
+    feature_role: predictor
+    default_tier: core
+    leakage_risk: "same as slope_2s10s_bps"
+    leakage_mitigation: "same as slope_2s10s_bps"
+
+  - canonical_feature_name: curvature_2_10_30_bps
+    source_family: treasury_rates
+    source_field_or_derivation: "treasury_rates_candidate_features.add_curve_slopes_and_curvature: (2*10 Yr - 2 Yr - 30 Yr) * 100"
+    description: "Standard 2/10/30 butterfly curvature measure, in basis points."
+    economic_rationale: "Captures curve shape beyond a single slope -- e.g. a richening belly relative to the wings."
+    transformation: "same-day level combination, converted to basis points"
+    unit: "basis points"
+    dtype: "float64"
+    applicable_forecast_cutoff: [announcement, pre_auction]
+    required_lookback: "same as slope_2s10s_bps, for all three maturities"
+    minimum_history: "2009-01-01"
+    availability_provenance: "same as slope_2s10s_bps"
+    missingness_meaning: "missing only if any of the three underlying maturities is missing"
+    schema_period_limitations: "same as slope_2s10s_bps"
+    feature_role: predictor
+    default_tier: core
+    leakage_risk: "same as slope_2s10s_bps"
+    leakage_mitigation: "same as slope_2s10s_bps"
+
+  # ============================================================
+  # Treasury daily par yield curve predictors (extended)
+  # ============================================================
+
+  - canonical_feature_name: adjacent_lower_par_yield_percent
+    source_family: treasury_rates
+    source_field_or_derivation: "treasury_rates_candidate_features.add_tenor_matched_rate_features"
+    description: "The par yield for the maturity immediately below this auction's own tenor."
+    economic_rationale: "Local curve-shape context around the auctioned tenor."
+    transformation: "same as matched_tenor_par_yield_percent"
+    unit: "percent"
+    dtype: "float64"
+    applicable_forecast_cutoff: [announcement, pre_auction]
+    required_lookback: "same as matched_tenor_par_yield_percent"
+    minimum_history: "2009-01-01"
+    availability_provenance: "same as matched_tenor_par_yield_percent"
+    missingness_meaning: "missing for the 2-Year tenor (no shorter nominal-coupon maturity in this project's registry) or if the source published an empty value"
+    schema_period_limitations: "same as matched_tenor_par_yield_percent"
+    feature_role: predictor
+    default_tier: extended
+    leakage_risk: "same as matched_tenor_par_yield_percent"
+    leakage_mitigation: "same as matched_tenor_par_yield_percent"
+
+  - canonical_feature_name: adjacent_higher_par_yield_percent
+    source_family: treasury_rates
+    source_field_or_derivation: "treasury_rates_candidate_features.add_tenor_matched_rate_features"
+    description: "The par yield for the maturity immediately above this auction's own tenor."
+    economic_rationale: "Same as adjacent_lower_par_yield_percent, for the next-longer maturity."
+    transformation: "same as matched_tenor_par_yield_percent"
+    unit: "percent"
+    dtype: "float64"
+    applicable_forecast_cutoff: [announcement, pre_auction]
+    required_lookback: "same as matched_tenor_par_yield_percent"
+    minimum_history: "2009-01-01"
+    availability_provenance: "same as matched_tenor_par_yield_percent"
+    missingness_meaning: "missing for the 30-Year tenor (no longer nominal-coupon maturity in this project's registry) or if the source published an empty value"
+    schema_period_limitations: "same as matched_tenor_par_yield_percent"
+    feature_role: predictor
+    default_tier: extended
+    leakage_risk: "same as matched_tenor_par_yield_percent"
+    leakage_mitigation: "same as matched_tenor_par_yield_percent"
+
+  - canonical_feature_name: matched_tenor_chg_1d_bps
+    source_family: treasury_rates
+    source_field_or_derivation: "treasury_rates_candidate_features.add_tenor_matched_rate_change_features"
+    description: "1-trading-day change in the tenor-matched par yield, in basis points."
+    economic_rationale: "The most immediate rate-momentum signal, at higher noise than the 5- and 20-day versions."
+    transformation: "same as matched_tenor_chg_5d_bps"
+    unit: "basis points"
+    dtype: "float64"
+    applicable_forecast_cutoff: [announcement, pre_auction]
+    required_lookback: "1 strictly preceding trading day"
+    minimum_history: "2009-01-01 plus one trading day"
+    availability_provenance: "same as matched_tenor_par_yield_percent"
+    missingness_meaning: "same as matched_tenor_chg_5d_bps"
+    schema_period_limitations: "none"
+    feature_role: predictor
+    default_tier: extended
+    leakage_risk: "same as matched_tenor_chg_5d_bps"
+    leakage_mitigation: "same as matched_tenor_chg_5d_bps"
+
+  - canonical_feature_name: matched_tenor_vol_5d_bps
+    source_family: treasury_rates
+    source_field_or_derivation: "treasury_rates_candidate_features.add_tenor_matched_rate_change_features, sourced from add_rate_changes_and_volatility's {maturity}_vol_5d_bps"
+    description: "5-trading-day realized volatility (std of daily changes) of the tenor-matched par yield, in basis points."
+    economic_rationale: "Recent rate volatility can affect dealer risk appetite for warehousing new duration supply."
+    transformation: "rolling std of daily changes, shift(1)'d so the current day's own change is excluded, computed before the auction join"
+    unit: "basis points"
+    dtype: "float64"
+    applicable_forecast_cutoff: [announcement, pre_auction]
+    required_lookback: "5 strictly preceding daily changes"
+    minimum_history: "~1 trading week after 2009-01-01"
+    availability_provenance: "same as matched_tenor_par_yield_percent"
+    missingness_meaning: "missing until 5 preceding daily changes exist"
+    schema_period_limitations: "none"
+    feature_role: predictor
+    default_tier: extended
+    leakage_risk: "including the current day's own change in its own realized-volatility window"
+    leakage_mitigation: "shift(1) before rolling, computed on the source's own pre-join daily series"
+
+  - canonical_feature_name: matched_tenor_vol_20d_bps
+    source_family: treasury_rates
+    source_field_or_derivation: "treasury_rates_candidate_features.add_tenor_matched_rate_change_features, sourced from add_rate_changes_and_volatility's {maturity}_vol_20d_bps"
+    description: "20-trading-day realized volatility of the tenor-matched par yield, in basis points."
+    economic_rationale: "A longer-horizon volatility complement to matched_tenor_vol_5d_bps."
+    transformation: "same as matched_tenor_vol_5d_bps"
+    unit: "basis points"
+    dtype: "float64"
+    applicable_forecast_cutoff: [announcement, pre_auction]
+    required_lookback: "20 strictly preceding daily changes"
+    minimum_history: "~1 trading month after 2009-01-01"
+    availability_provenance: "same as matched_tenor_par_yield_percent"
+    missingness_meaning: "same as matched_tenor_vol_5d_bps"
+    schema_period_limitations: "none"
+    feature_role: predictor
+    default_tier: extended
+    leakage_risk: "same as matched_tenor_vol_5d_bps"
+    leakage_mitigation: "same as matched_tenor_vol_5d_bps"
+
+  # ============================================================
+  # CFTC TFF Futures Only positioning predictors (core)
+  # ============================================================
+
+  - canonical_feature_name: matched_dealer_net_contracts
+    source_family: cftc_positioning
+    source_field_or_derivation: "cftc_candidate_features.add_net_positions + cftc_join.add_tenor_matched_positioning_features"
+    description: "Net (long minus short) Dealer/Intermediary futures position in the primary direct-match contract for this auction's tenor."
+    economic_rationale: "Futures-market positioning by the same broad participant category (though not identical to NY Fed primary dealers) provides a market-based, real-time-available complement to the weekly cash-market dealer statistics."
+    transformation: "long - short, in contracts; as-of joined, tenor-matched to the primary direct contract"
+    unit: "contracts"
+    dtype: "Float64"
+    applicable_forecast_cutoff: [announcement, pre_auction]
+    required_lookback: "the most recent safely-available weekly report"
+    minimum_history: "2006-06-13 (contract history; CFTC ingestion covers this project's full 2010+ auction sample)"
+    availability_provenance: "publication_safe_available_date <= cutoff, via as-of join; never the Tuesday observation date alone"
+    missingness_meaning: "missing if no CFTC report was safely available before the cutoff, or if this tenor has no direct futures contract (3-Year, 7-Year, 20-Year) -- see direct_contract_mapping_status for which"
+    schema_period_limitations: "3-Year and 7-Year have no futures contract at all; 20-Year has no *direct* contract (only bond-future context)"
+    feature_role: predictor
+    default_tier: core
+    leakage_risk: "using the Tuesday observation date instead of the Friday-or-later publication date"
+    leakage_mitigation: "as-of join keyed on publication_safe_available_date, including verified per-report disruption overrides for 3 known CFTC release delays"
+
+  - canonical_feature_name: matched_dealer_net_contracts_chg_4w
+    source_family: cftc_positioning
+    source_field_or_derivation: "cftc_candidate_features.add_week_over_week_changes, sourced via the matched contract"
+    description: "4-observation-week change in matched_dealer_net_contracts."
+    economic_rationale: "The direction/speed of change in futures-market dealer positioning, robust to publication delays (indexed by observation week, not calendar week)."
+    transformation: "per-contract trailing difference over 4 observation weeks, computed before the auction join"
+    unit: "contracts"
+    dtype: "Float64"
+    applicable_forecast_cutoff: [announcement, pre_auction]
+    required_lookback: "4 strictly preceding observation weeks for the matched contract"
+    minimum_history: "~4 weeks after the matched contract's own first observation"
+    availability_provenance: "same as matched_dealer_net_contracts"
+    missingness_meaning: "same as matched_dealer_net_contracts, plus missing until 4 preceding observation weeks exist"
+    schema_period_limitations: "same as matched_dealer_net_contracts"
+    feature_role: predictor
+    default_tier: core
+    leakage_risk: "same as matched_dealer_net_contracts"
+    leakage_mitigation: "same as matched_dealer_net_contracts"
+
+  - canonical_feature_name: matched_open_interest_all
+    source_family: cftc_positioning
+    source_field_or_derivation: "cftc_schema.FIELDS_TO_KEEP (open_interest_all); as-of joined, tenor-matched"
+    description: "Total open interest in the primary direct-match futures contract."
+    economic_rationale: "Overall futures-market size/liquidity context for interpreting the positioning figures alongside it."
+    transformation: "as-of join, tenor-matched, no further transform"
+    unit: "contracts"
+    dtype: "Float64"
+    applicable_forecast_cutoff: [announcement, pre_auction]
+    required_lookback: "same as matched_dealer_net_contracts"
+    minimum_history: "same as matched_dealer_net_contracts"
+    availability_provenance: "same as matched_dealer_net_contracts"
+    missingness_meaning: "same as matched_dealer_net_contracts"
+    schema_period_limitations: "same as matched_dealer_net_contracts"
+    feature_role: predictor
+    default_tier: core
+    leakage_risk: "same as matched_dealer_net_contracts"
+    leakage_mitigation: "same as matched_dealer_net_contracts"
+
+  - canonical_feature_name: matched_dealer_long_pct_oi
+    source_family: cftc_positioning
+    source_field_or_derivation: "cftc_candidate_features.add_share_of_open_interest: dealer_positions_long_all / open_interest_all"
+    description: "Dealer/Intermediary long positions as a share of total open interest, for the matched contract."
+    economic_rationale: "Normalizes the directional gross long side by market size, comparable across periods of very different total open interest."
+    transformation: "same-week ratio of two already-published figures"
+    unit: "fraction, 0-1"
+    dtype: "Float64"
+    applicable_forecast_cutoff: [announcement, pre_auction]
+    required_lookback: "same as matched_dealer_net_contracts"
+    minimum_history: "same as matched_dealer_net_contracts"
+    availability_provenance: "same as matched_dealer_net_contracts"
+    missingness_meaning: "same as matched_dealer_net_contracts"
+    schema_period_limitations: "same as matched_dealer_net_contracts"
+    feature_role: predictor
+    default_tier: core
+    leakage_risk: "same as matched_dealer_net_contracts"
+    leakage_mitigation: "same as matched_dealer_net_contracts"
+
+  - canonical_feature_name: matched_dealer_short_pct_oi
+    source_family: cftc_positioning
+    source_field_or_derivation: "cftc_candidate_features.add_share_of_open_interest: dealer_positions_short_all / open_interest_all"
+    description: "Dealer/Intermediary short positions as a share of total open interest, for the matched contract."
+    economic_rationale: "Same as matched_dealer_long_pct_oi, for the short side."
+    transformation: "same as matched_dealer_long_pct_oi"
+    unit: "fraction, 0-1"
+    dtype: "Float64"
+    applicable_forecast_cutoff: [announcement, pre_auction]
+    required_lookback: "same as matched_dealer_net_contracts"
+    minimum_history: "same as matched_dealer_net_contracts"
+    availability_provenance: "same as matched_dealer_net_contracts"
+    missingness_meaning: "same as matched_dealer_net_contracts"
+    schema_period_limitations: "same as matched_dealer_net_contracts"
+    feature_role: predictor
+    default_tier: core
+    leakage_risk: "same as matched_dealer_net_contracts"
+    leakage_mitigation: "same as matched_dealer_net_contracts"
+
+  # ============================================================
+  # CFTC TFF Futures Only positioning predictors (extended)
+  # ============================================================
+
+  - canonical_feature_name: matched_asset_mgr_net_contracts
+    source_family: cftc_positioning
+    source_field_or_derivation: "cftc_candidate_features.add_net_positions + cftc_join.add_tenor_matched_positioning_features"
+    description: "Net Asset Manager/Institutional futures position in the matched contract."
+    economic_rationale: "A distinct participant category (institutional money managers, pension funds, insurers, mutual funds) whose positioning can move independently of dealer positioning."
+    transformation: "same as matched_dealer_net_contracts"
+    unit: "contracts"
+    dtype: "Float64"
+    applicable_forecast_cutoff: [announcement, pre_auction]
+    required_lookback: "same as matched_dealer_net_contracts"
+    minimum_history: "same as matched_dealer_net_contracts"
+    availability_provenance: "same as matched_dealer_net_contracts"
+    missingness_meaning: "same as matched_dealer_net_contracts"
+    schema_period_limitations: "same as matched_dealer_net_contracts"
+    feature_role: predictor
+    default_tier: extended
+    leakage_risk: "same as matched_dealer_net_contracts"
+    leakage_mitigation: "same as matched_dealer_net_contracts"
+
+  - canonical_feature_name: matched_lev_money_net_contracts
+    source_family: cftc_positioning
+    source_field_or_derivation: "cftc_candidate_features.add_net_positions + cftc_join.add_tenor_matched_positioning_features"
+    description: "Net Leveraged Funds (hedge funds and other leveraged money) futures position in the matched contract."
+    economic_rationale: "Leveraged-fund positioning is often the most rapidly-adjusting category, a useful contrast to dealer/asset-manager positioning."
+    transformation: "same as matched_dealer_net_contracts"
+    unit: "contracts"
+    dtype: "Float64"
+    applicable_forecast_cutoff: [announcement, pre_auction]
+    required_lookback: "same as matched_dealer_net_contracts"
+    minimum_history: "same as matched_dealer_net_contracts"
+    availability_provenance: "same as matched_dealer_net_contracts"
+    missingness_meaning: "same as matched_dealer_net_contracts"
+    schema_period_limitations: "same as matched_dealer_net_contracts"
+    feature_role: predictor
+    default_tier: extended
+    leakage_risk: "same as matched_dealer_net_contracts"
+    leakage_mitigation: "same as matched_dealer_net_contracts"
+
+  - canonical_feature_name: matched_other_rept_net_contracts
+    source_family: cftc_positioning
+    source_field_or_derivation: "cftc_candidate_features.add_net_positions + cftc_join.add_tenor_matched_positioning_features"
+    description: "Net Other Reportables futures position in the matched contract."
+    economic_rationale: "Catch-all reportable-trader category, retained for completeness of the four-category CFTC breakdown."
+    transformation: "same as matched_dealer_net_contracts"
+    unit: "contracts"
+    dtype: "Float64"
+    applicable_forecast_cutoff: [announcement, pre_auction]
+    required_lookback: "same as matched_dealer_net_contracts"
+    minimum_history: "same as matched_dealer_net_contracts"
+    availability_provenance: "same as matched_dealer_net_contracts"
+    missingness_meaning: "same as matched_dealer_net_contracts"
+    schema_period_limitations: "same as matched_dealer_net_contracts"
+    feature_role: predictor
+    default_tier: extended
+    leakage_risk: "same as matched_dealer_net_contracts"
+    leakage_mitigation: "same as matched_dealer_net_contracts"
+
+  - canonical_feature_name: matched_nonrept_net_contracts
+    source_family: cftc_positioning
+    source_field_or_derivation: "cftc_candidate_features.add_net_positions + cftc_join.add_tenor_matched_positioning_features"
+    description: "Net Nonreportable (below CFTC's reporting threshold) futures position in the matched contract."
+    economic_rationale: "A residual, small-trader positioning signal; CFTC does not collect a spreading breakout for this category."
+    transformation: "same as matched_dealer_net_contracts"
+    unit: "contracts"
+    dtype: "Float64"
+    applicable_forecast_cutoff: [announcement, pre_auction]
+    required_lookback: "same as matched_dealer_net_contracts"
+    minimum_history: "same as matched_dealer_net_contracts"
+    availability_provenance: "same as matched_dealer_net_contracts"
+    missingness_meaning: "same as matched_dealer_net_contracts"
+    schema_period_limitations: "same as matched_dealer_net_contracts"
+    feature_role: predictor
+    default_tier: extended
+    leakage_risk: "same as matched_dealer_net_contracts"
+    leakage_mitigation: "same as matched_dealer_net_contracts"
+
+  - canonical_feature_name: matched_dealer_net_contracts_chg_1w
+    source_family: cftc_positioning
+    source_field_or_derivation: "cftc_candidate_features.add_week_over_week_changes, sourced via the matched contract"
+    description: "1-observation-week change in matched_dealer_net_contracts."
+    economic_rationale: "A shorter, noisier complement to matched_dealer_net_contracts_chg_4w."
+    transformation: "same as matched_dealer_net_contracts_chg_4w, window=1"
+    unit: "contracts"
+    dtype: "Float64"
+    applicable_forecast_cutoff: [announcement, pre_auction]
+    required_lookback: "1 strictly preceding observation week for the matched contract"
+    minimum_history: "~1 week after the matched contract's own first observation"
+    availability_provenance: "same as matched_dealer_net_contracts"
+    missingness_meaning: "same as matched_dealer_net_contracts_chg_4w"
+    schema_period_limitations: "same as matched_dealer_net_contracts"
+    feature_role: predictor
+    default_tier: extended
+    leakage_risk: "same as matched_dealer_net_contracts"
+    leakage_mitigation: "same as matched_dealer_net_contracts"
+
+  - canonical_feature_name: direct_contract_mapping_status
+    source_family: cftc_positioning
+    source_field_or_derivation: "cftc_join.add_tenor_matched_positioning_features"
+    description: "Whether this auction's tenor has a direct-match futures contract, and if so, whether that contract had data in the matched report ('direct_contract_available' / 'no_direct_contract_for_tenor' / 'direct_contract_mapped_but_data_unavailable')."
+    economic_rationale: "Mostly determined by tenor alone (redundant with it), but flags the specific case where a mapped contract's own data happened to be unavailable, independent of overall CFTC report availability."
+    transformation: "categorical status derived from the join, per module docstring's issue-9 axis separation"
+    unit: "categorical, 3 levels"
+    dtype: "string"
+    applicable_forecast_cutoff: [announcement, pre_auction]
+    required_lookback: "none beyond the matched contract's own availability"
+    minimum_history: "n/a"
+    availability_provenance: "same as matched_dealer_net_contracts"
+    missingness_meaning: "never missing (always one of the 3 defined status strings)"
+    schema_period_limitations: "3-Year/7-Year/20-Year are always 'no_direct_contract_for_tenor', a verified structural absence, not a coverage gap"
+    feature_role: predictor
+    default_tier: extended
+    leakage_risk: "none"
+    leakage_mitigation: "n/a"
+
+  # ============================================================
+  # Philadelphia Fed RTDSM macro predictors (core)
+  # ============================================================
+
+  - canonical_feature_name: ROUTPUT_level
+    source_family: rtdsm_macro
+    source_field_or_derivation: "rtdsm_join.as_of_join_variable: ROUTPUT_level"
+    description: "The latest Real GNP/GDP observation safely known as of the cutoff."
+    economic_rationale: "Headline growth conditions -- the macro backdrop against which Treasury supply is absorbed."
+    transformation: "vintage-aware as-of lookup (two-step: vintage index, then that vintage's own latest non-null observation) -- never today's fully-revised figure"
+    unit: "billions of chained dollars (base year varies by vintage)"
+    dtype: "float64"
+    applicable_forecast_cutoff: [announcement, pre_auction]
+    required_lookback: "the most recent safely-available vintage"
+    minimum_history: "1965M11 vintage coverage; effectively unconstrained for this project's 2010+ sample"
+    availability_provenance: "publication_safe_available_date of the matched vintage <= cutoff; conservative bound from BEA's own GDP release-schedule evidence"
+    missingness_meaning: "missing only if no vintage was safely available before the cutoff (verified: 0 rows in the ordinary modeling sample) or the matched vintage's own latest observation is null (see ROUTPUT_source_gap_detected in the audit table)"
+    schema_period_limitations: "none for this project's 2010+ sample"
+    feature_role: predictor
+    default_tier: core
+    leakage_risk: "using today's fully-revised figure, or the wrong vintage for the cutoff"
+    leakage_mitigation: "two-step vintage-aware as-of join; proven by a real, in-sample revision worked example (artifacts/rtdsm_macro_vintage_data_quality.md)"
+
+  - canonical_feature_name: RUC_level
+    source_family: rtdsm_macro
+    source_field_or_derivation: "rtdsm_join.as_of_join_variable: RUC_level"
+    description: "The latest civilian unemployment rate observation safely known as of the cutoff."
+    economic_rationale: "Headline labor-market conditions."
+    transformation: "vintage-aware as-of lookup"
+    unit: "percentage points, seasonally adjusted"
+    dtype: "float64"
+    applicable_forecast_cutoff: [announcement, pre_auction]
+    required_lookback: "the most recent safely-available vintage"
+    minimum_history: "1965Q4 vintage coverage"
+    availability_provenance: "publication_safe_available_date of the matched vintage <= cutoff; a documented exact collection day (15th of the middle month of the quarter)"
+    missingness_meaning: "same as ROUTPUT_level"
+    schema_period_limitations: "none for this project's 2010+ sample"
+    feature_role: predictor
+    default_tier: core
+    leakage_risk: "same as ROUTPUT_level"
+    leakage_mitigation: "same as ROUTPUT_level"
+
+  - canonical_feature_name: EMPLOY_level
+    source_family: rtdsm_macro
+    source_field_or_derivation: "rtdsm_join.as_of_join_variable: EMPLOY_level"
+    description: "The latest nonfarm payroll employment observation safely known as of the cutoff."
+    economic_rationale: "Headline labor-market conditions, at monthly-vintage granularity."
+    transformation: "vintage-aware as-of lookup"
+    unit: "thousands of employees, seasonally adjusted"
+    dtype: "float64"
+    applicable_forecast_cutoff: [announcement, pre_auction]
+    required_lookback: "the most recent safely-available vintage"
+    minimum_history: "1964M12 vintage coverage"
+    availability_provenance: "publication_safe_available_date of the matched vintage <= cutoff; conservative bound from BLS's own Employment Situation release-schedule evidence"
+    missingness_meaning: "same as ROUTPUT_level"
+    schema_period_limitations: "none for this project's 2010+ sample"
+    feature_role: predictor
+    default_tier: core
+    leakage_risk: "same as ROUTPUT_level"
+    leakage_mitigation: "same as ROUTPUT_level"
+
+  - canonical_feature_name: ROUTPUT_pct_yoy_chg
+    source_family: rtdsm_macro
+    source_field_or_derivation: "rtdsm_join.as_of_join_variable: (current_value / yoy_value - 1) * 100, both drawn from the same matched vintage"
+    description: "Year-over-year percentage change in Real GNP/GDP, computed within the single matched vintage's own data."
+    economic_rationale: "Growth-rate framing is often more directly comparable across time than the level alone."
+    transformation: "same-vintage percentage comparison over a full calendar-year lag on the vintage's own complete period grid (verified gap-safe)"
+    unit: "percent"
+    dtype: "float64"
+    applicable_forecast_cutoff: [announcement, pre_auction]
+    required_lookback: "the matched vintage's own data one year (4 quarterly periods) back from its own latest observation"
+    minimum_history: "one year after ROUTPUT's own coverage start"
+    availability_provenance: "same as ROUTPUT_level"
+    missingness_meaning: "missing under the same conditions as the level, plus if the vintage's own one-year-earlier period is itself null"
+    schema_period_limitations: "same as ROUTPUT_level"
+    feature_role: predictor
+    default_tier: core
+    leakage_risk: "a missing intermediate period corrupting which period counts as 'one year ago'"
+    leakage_mitigation: "computed via shift(yoy_lag) over the full period grid (including null rows), never over non-null rows only -- verified by dedicated tests with a deliberately-missing intermediate observation"
+
+  - canonical_feature_name: EMPLOY_pct_yoy_chg
+    source_family: rtdsm_macro
+    source_field_or_derivation: "rtdsm_join.as_of_join_variable: (current_value / yoy_value - 1) * 100, both drawn from the same matched vintage"
+    description: "Year-over-year percentage change in nonfarm payroll employment, computed within the single matched vintage's own data."
+    economic_rationale: "Growth-rate framing for the labor-market headline level."
+    transformation: "same as ROUTPUT_pct_yoy_chg"
+    unit: "percent"
+    dtype: "float64"
+    applicable_forecast_cutoff: [announcement, pre_auction]
+    required_lookback: "the matched vintage's own data one year (12 monthly periods) back from its own latest observation"
+    minimum_history: "one year after EMPLOY's own coverage start"
+    availability_provenance: "same as EMPLOY_level"
+    missingness_meaning: "same as ROUTPUT_pct_yoy_chg"
+    schema_period_limitations: "same as EMPLOY_level"
+    feature_role: predictor
+    default_tier: core
+    leakage_risk: "same as ROUTPUT_pct_yoy_chg"
+    leakage_mitigation: "same as ROUTPUT_pct_yoy_chg"
+
+  - canonical_feature_name: RUC_level_yoy_chg
+    source_family: rtdsm_macro
+    source_field_or_derivation: "rtdsm_join.as_of_join_variable: current_value - yoy_value, both drawn from the same matched vintage"
+    description: "Year-over-year level change (percentage-point change) in the civilian unemployment rate."
+    economic_rationale: "For a rate already expressed in percentage points, a level (percentage-point) change is more directly interpretable than a percent-of-percent change."
+    transformation: "same-vintage level difference over a full calendar-year lag"
+    unit: "percentage points"
+    dtype: "float64"
+    applicable_forecast_cutoff: [announcement, pre_auction]
+    required_lookback: "same as {ROUTPUT,EMPLOY}_pct_yoy_chg"
+    minimum_history: "one year after RUC's own coverage start"
+    availability_provenance: "same as {ROUTPUT,RUC,EMPLOY}_level"
+    missingness_meaning: "same as {ROUTPUT,EMPLOY}_pct_yoy_chg"
+    schema_period_limitations: "same as {ROUTPUT,RUC,EMPLOY}_level"
+    feature_role: predictor
+    default_tier: core
+    leakage_risk: "same as {ROUTPUT,EMPLOY}_pct_yoy_chg"
+    leakage_mitigation: "same as {ROUTPUT,EMPLOY}_pct_yoy_chg"
+
+  # ============================================================
+  # Philadelphia Fed RTDSM macro predictors (extended)
+  # ============================================================
+
+  - canonical_feature_name: PCPI_level
+    source_family: rtdsm_macro
+    source_field_or_derivation: "rtdsm_join.as_of_join_variable: PCPI_level"
+    description: "The latest Consumer Price Index (monthly vintages) observation safely known as of the cutoff."
+    economic_rationale: "Inflation conditions -- a secondary macro dimension relative to the core growth/labor set, economically relevant to rate/supply dynamics."
+    transformation: "vintage-aware as-of lookup"
+    unit: "index level, seasonally adjusted"
+    dtype: "float64"
+    applicable_forecast_cutoff: [announcement, pre_auction]
+    required_lookback: "the most recent safely-available vintage"
+    minimum_history: "1998M11 vintage coverage"
+    availability_provenance: "publication_safe_available_date of the matched vintage <= cutoff; conservative bound from BLS's own CPI release-schedule evidence"
+    missingness_meaning: "same as ROUTPUT_level"
+    schema_period_limitations: "none for this project's 2010+ sample"
+    feature_role: predictor
+    default_tier: extended
+    leakage_risk: "same as ROUTPUT_level"
+    leakage_mitigation: "same as ROUTPUT_level"
+
+  - canonical_feature_name: IPT_level
+    source_family: rtdsm_macro
+    source_field_or_derivation: "rtdsm_join.as_of_join_variable: IPT_level"
+    description: "The latest total industrial production observation safely known as of the cutoff."
+    economic_rationale: "Production conditions -- a secondary macro dimension."
+    transformation: "vintage-aware as-of lookup"
+    unit: "index level, seasonally adjusted (base year varies by vintage)"
+    dtype: "float64"
+    applicable_forecast_cutoff: [announcement, pre_auction]
+    required_lookback: "the most recent safely-available vintage"
+    minimum_history: "1962M11 vintage coverage"
+    availability_provenance: "publication_safe_available_date of the matched vintage <= cutoff; Federal Reserve Board's own stated 12th-18th release-day range"
+    missingness_meaning: "same as ROUTPUT_level"
+    schema_period_limitations: "none for this project's 2010+ sample"
+    feature_role: predictor
+    default_tier: extended
+    leakage_risk: "same as ROUTPUT_level"
+    leakage_mitigation: "same as ROUTPUT_level"
+
+  - canonical_feature_name: HSTARTS_level
+    source_family: rtdsm_macro
+    source_field_or_derivation: "rtdsm_join.as_of_join_variable: HSTARTS_level"
+    description: "The latest housing starts observation safely known as of the cutoff."
+    economic_rationale: "Housing-sector conditions -- a secondary macro dimension."
+    transformation: "vintage-aware as-of lookup"
+    unit: "thousands of housing units, seasonally adjusted"
+    dtype: "float64"
+    applicable_forecast_cutoff: [announcement, pre_auction]
+    required_lookback: "the most recent safely-available vintage"
+    minimum_history: "1968M2 vintage coverage"
+    availability_provenance: "publication_safe_available_date of the matched vintage <= cutoff; conservative bound from the Census Bureau/HUD's own 12th-business-day release pattern"
+    missingness_meaning: "same as ROUTPUT_level"
+    schema_period_limitations: "none for this project's 2010+ sample"
+    feature_role: predictor
+    default_tier: extended
+    leakage_risk: "same as ROUTPUT_level"
+    leakage_mitigation: "same as ROUTPUT_level"
+
+  - canonical_feature_name: PCPI_pct_yoy_chg
+    source_family: rtdsm_macro
+    source_field_or_derivation: "rtdsm_join.as_of_join_variable: (current_value / yoy_value - 1) * 100"
+    description: "Year-over-year percentage change in PCPI, computed within the single matched vintage's own data."
+    economic_rationale: "Same rationale as ROUTPUT_pct_yoy_chg, for inflation."
+    transformation: "same as ROUTPUT_pct_yoy_chg"
+    unit: "percent"
+    dtype: "float64"
+    applicable_forecast_cutoff: [announcement, pre_auction]
+    required_lookback: "the matched vintage's own data one year (12 monthly periods) back"
+    minimum_history: "one year after PCPI's own coverage start"
+    availability_provenance: "same as PCPI_level"
+    missingness_meaning: "same as ROUTPUT_pct_yoy_chg"
+    schema_period_limitations: "same as PCPI_level"
+    feature_role: predictor
+    default_tier: extended
+    leakage_risk: "same as ROUTPUT_pct_yoy_chg"
+    leakage_mitigation: "same as ROUTPUT_pct_yoy_chg"
+
+  - canonical_feature_name: IPT_pct_yoy_chg
+    source_family: rtdsm_macro
+    source_field_or_derivation: "rtdsm_join.as_of_join_variable: (current_value / yoy_value - 1) * 100"
+    description: "Year-over-year percentage change in total industrial production, computed within the single matched vintage's own data."
+    economic_rationale: "Same rationale as ROUTPUT_pct_yoy_chg, for production."
+    transformation: "same as ROUTPUT_pct_yoy_chg"
+    unit: "percent"
+    dtype: "float64"
+    applicable_forecast_cutoff: [announcement, pre_auction]
+    required_lookback: "the matched vintage's own data one year (12 monthly periods) back"
+    minimum_history: "one year after IPT's own coverage start"
+    availability_provenance: "same as IPT_level"
+    missingness_meaning: "same as ROUTPUT_pct_yoy_chg"
+    schema_period_limitations: "same as IPT_level"
+    feature_role: predictor
+    default_tier: extended
+    leakage_risk: "same as ROUTPUT_pct_yoy_chg"
+    leakage_mitigation: "same as ROUTPUT_pct_yoy_chg"
+
+  - canonical_feature_name: HSTARTS_pct_yoy_chg
+    source_family: rtdsm_macro
+    source_field_or_derivation: "rtdsm_join.as_of_join_variable: (current_value / yoy_value - 1) * 100"
+    description: "Year-over-year percentage change in housing starts, computed within the single matched vintage's own data."
+    economic_rationale: "Same rationale as ROUTPUT_pct_yoy_chg, for housing."
+    transformation: "same as ROUTPUT_pct_yoy_chg"
+    unit: "percent"
+    dtype: "float64"
+    applicable_forecast_cutoff: [announcement, pre_auction]
+    required_lookback: "the matched vintage's own data one year (12 monthly periods) back"
+    minimum_history: "one year after HSTARTS's own coverage start"
+    availability_provenance: "same as HSTARTS_level"
+    missingness_meaning: "same as ROUTPUT_pct_yoy_chg"
+    schema_period_limitations: "same as HSTARTS_level"
+    feature_role: predictor
+    default_tier: extended
+    leakage_risk: "same as ROUTPUT_pct_yoy_chg"
+    leakage_mitigation: "same as ROUTPUT_pct_yoy_chg"
+
+  # ============================================================
+  # Pre-auction incremental update fields (Step 12)
+  # ============================================================
+
+  - name_pattern: "{dealer_stats,treasury_rates,cftc_positioning}_new_release_between_cutoffs, {ROUTPUT,RUC,PCPI,IPT,EMPLOY,HSTARTS}_new_vintage_between_cutoffs"
+    source_family: pre_auction_incremental
+    source_field_or_derivation: "feature_matrix.build_pre_auction_update_table: whether a strictly-newer safely-available release/vintage exists at the pre-auction cutoff than at the announcement cutoff, per source (one literal boolean column per source/variable, 9 total)"
+    description: "Whether a genuinely newer release/vintage became safely available between the two cutoffs, for each of the 3 market-data sources and each of the 6 RTDSM macro variables."
+    economic_rationale: "Distinguishes 'no update occurred' from 'an update occurred but the value happened not to change' -- a structurally different fact from a raw value difference."
+    transformation: "comparison of each source's own selected release/vintage identity (not value) between the two cutoffs"
+    unit: "boolean"
+    dtype: "bool"
+    applicable_forecast_cutoff: [pre_auction]
+    required_lookback: "both cutoffs' own as-of joins"
+    minimum_history: "n/a"
+    availability_provenance: "derived from each source's own join_matched/vintage_label columns at both cutoffs"
+    missingness_meaning: "never missing (False when no release was available at either cutoff)"
+    schema_period_limitations: "none"
+    feature_role: predictor
+    default_tier: extended
+    leakage_risk: "none -- both underlying cutoffs are already leakage-safe"
+    leakage_mitigation: "n/a"
+
+  - name_pattern: "{matched_tenor_par_yield_percent,slope_2s10s_bps,slope_5s30s_bps,matched_dealer_net_contracts,dealer_net_position_total_ex_tips_harmonized}_change_between_cutoffs"
+    source_family: pre_auction_incremental
+    source_field_or_derivation: "feature_matrix.build_pre_auction_update_table: pre_auction value minus announcement value, only for this small, pre-specified set of 5 core numeric features (one literal column per feature)"
+    description: "Change in a pre-specified core feature's own value between the announcement and pre-auction cutoffs."
+    economic_rationale: "Directly answers 'what changed in the run-up to the auction,' for a small, interpretable, pre-specified set of features -- never a mechanical subtraction of every numeric column."
+    transformation: "subtraction of two already-leakage-safe as-of values"
+    unit: "same unit as the underlying feature"
+    dtype: "float64"
+    applicable_forecast_cutoff: [pre_auction]
+    required_lookback: "both cutoffs' own as-of joins"
+    minimum_history: "n/a"
+    availability_provenance: "derived from each underlying feature's own availability at both cutoffs"
+    missingness_meaning: "missing if either cutoff's own underlying value is missing -- never treated as a zero-valued update"
+    schema_period_limitations: "same as the underlying feature"
+    feature_role: predictor
+    default_tier: extended
+    leakage_risk: "none -- both underlying cutoffs are already leakage-safe"
+    leakage_mitigation: "n/a"
+
+  - canonical_feature_name: cutoff_gap_calendar_days
+    source_family: pre_auction_incremental
+    source_field_or_derivation: "feature_matrix.build_pre_auction_update_table: pre_auction_cutoff_date - announcement_cutoff_date"
+    description: "Number of calendar days between the announcement and pre-auction cutoffs."
+    economic_rationale: "Context for interpreting the other pre_auction_incremental fields: a longer gap gives more opportunity for a genuine update to occur."
+    transformation: "date subtraction"
+    unit: "days"
+    dtype: "int64"
+    applicable_forecast_cutoff: [pre_auction]
+    required_lookback: "none"
+    minimum_history: "none"
+    availability_provenance: "both cutoffs known exactly at announcement time"
+    missingness_meaning: "never missing"
+    schema_period_limitations: "none"
+    feature_role: predictor
+    default_tier: extended
+    leakage_risk: "none"
+    leakage_mitigation: "n/a"
+
+  # ============================================================
+  # Target table (Step 5) -- physically separate from every predictor matrix
+  # ============================================================
+
+  - canonical_feature_name: primary_dealer_share
+    source_family: target
+    source_field_or_derivation: "targets.add_bidder_shares: primary_dealer_accepted / public_accepted_amount"
+    description: "Primary-dealer take-down share of the auction (central research quantity)."
+    economic_rationale: "n/a -- this is the outcome, not a predictor"
+    transformation: "see targets.py"
+    unit: "fraction, 0-1"
+    dtype: "Float64"
+    applicable_forecast_cutoff: "n/a -- known only after settlement"
+    required_lookback: "n/a"
+    minimum_history: "n/a"
+    availability_provenance: "known only after the auction settles"
+    missingness_meaning: "missing (pd.NA) if the auction has not settled yet -- never zero, never imputed"
+    schema_period_limitations: "excludes the two verified restricted primary-dealer-only auctions (docs/target_specification.md)"
+    feature_role: target
+    default_tier: excluded
+    leakage_risk: "n/a -- deliberately excluded from every predictor matrix"
+    leakage_mitigation: "kept in a physically separate target table (data/processed/auction_targets.parquet), merged only as an explicit, later operation keyed by auction_key"
+
+  - canonical_feature_name: direct_bidder_share
+    source_family: target
+    source_field_or_derivation: "targets.add_bidder_shares: direct_bidder_accepted / public_accepted_amount"
+    description: "Direct-bidder take-down share of the auction."
+    economic_rationale: "n/a -- outcome"
+    transformation: "see targets.py"
+    unit: "fraction, 0-1"
+    dtype: "Float64"
+    applicable_forecast_cutoff: "n/a"
+    required_lookback: "n/a"
+    minimum_history: "n/a"
+    availability_provenance: "known only after the auction settles"
+    missingness_meaning: "missing if unsettled; real zero for the two special restricted auctions in the complete (non-modeling) sample"
+    schema_period_limitations: "same as primary_dealer_share"
+    feature_role: target
+    default_tier: excluded
+    leakage_risk: "same as primary_dealer_share"
+    leakage_mitigation: "same as primary_dealer_share"
+
+  - canonical_feature_name: indirect_bidder_share
+    source_family: target
+    source_field_or_derivation: "targets.add_bidder_shares: indirect_bidder_accepted / public_accepted_amount"
+    description: "Indirect-bidder take-down share of the auction."
+    economic_rationale: "n/a -- outcome"
+    transformation: "see targets.py"
+    unit: "fraction, 0-1"
+    dtype: "Float64"
+    applicable_forecast_cutoff: "n/a"
+    required_lookback: "n/a"
+    minimum_history: "n/a"
+    availability_provenance: "known only after the auction settles"
+    missingness_meaning: "same as direct_bidder_share"
+    schema_period_limitations: "same as primary_dealer_share"
+    feature_role: target
+    default_tier: excluded
+    leakage_risk: "same as primary_dealer_share"
+    leakage_mitigation: "same as primary_dealer_share"
+
+  - canonical_feature_name: bid_to_cover_ratio
+    source_family: target
+    source_field_or_derivation: "Fiscal Data auctions API field bid_to_cover_ratio"
+    description: "Treasury's own published bid-to-cover ratio."
+    economic_rationale: "n/a -- outcome"
+    transformation: "none (API's own precomputed field)"
+    unit: "ratio"
+    dtype: "Float64"
+    applicable_forecast_cutoff: "n/a"
+    required_lookback: "n/a"
+    minimum_history: "n/a"
+    availability_provenance: "known only after the auction settles"
+    missingness_meaning: "missing if unsettled"
+    schema_period_limitations: "same as primary_dealer_share"
+    feature_role: target
+    default_tier: excluded
+    leakage_risk: "same as primary_dealer_share"
+    leakage_mitigation: "same as primary_dealer_share"
+
+  - canonical_feature_name: noncompetitive_share
+    source_family: target_diagnostic
+    source_field_or_derivation: "targets.add_bidder_shares: noncomp_accepted / public_accepted_amount"
+    description: "Domestic-noncompetitive-bid share -- a diagnostic category, not a primary research outcome."
+    economic_rationale: "n/a -- diagnostic; completes the exact 5-category partition of public_accepted_amount"
+    transformation: "see targets.py"
+    unit: "fraction, 0-1"
+    dtype: "Float64"
+    applicable_forecast_cutoff: "n/a"
+    required_lookback: "n/a"
+    minimum_history: "n/a"
+    availability_provenance: "known only after the auction settles"
+    missingness_meaning: "missing if unsettled"
+    schema_period_limitations: "same as primary_dealer_share"
+    feature_role: target_diagnostic
+    default_tier: excluded
+    leakage_risk: "same as primary_dealer_share"
+    leakage_mitigation: "same as primary_dealer_share"
+
+  - canonical_feature_name: fima_share
+    source_family: target_diagnostic
+    source_field_or_derivation: "targets.add_bidder_shares: fima_noncomp_accepted / public_accepted_amount"
+    description: "FIMA-noncompetitive-bid share -- a diagnostic category."
+    economic_rationale: "n/a -- diagnostic"
+    transformation: "see targets.py"
+    unit: "fraction, 0-1"
+    dtype: "Float64"
+    applicable_forecast_cutoff: "n/a"
+    required_lookback: "n/a"
+    minimum_history: "n/a"
+    availability_provenance: "known only after the auction settles"
+    missingness_meaning: "missing if unsettled"
+    schema_period_limitations: "same as primary_dealer_share"
+    feature_role: target_diagnostic
+    default_tier: excluded
+    leakage_risk: "same as primary_dealer_share"
+    leakage_mitigation: "same as primary_dealer_share"
+
+  - canonical_feature_name: public_accepted_amount
+    source_family: target_diagnostic
+    source_field_or_derivation: "targets.add_public_accepted_amount: comp_accepted + noncomp_accepted + fima_noncomp_accepted"
+    description: "The denominator shared by every bidder-category share and bid-to-cover (excludes only SOMA)."
+    economic_rationale: "n/a -- diagnostic/audit quantity supporting the targets above"
+    transformation: "see targets.py"
+    unit: "USD"
+    dtype: "Float64"
+    applicable_forecast_cutoff: "n/a"
+    required_lookback: "n/a"
+    minimum_history: "n/a"
+    availability_provenance: "known only after the auction settles"
+    missingness_meaning: "missing if unsettled"
+    schema_period_limitations: "same as primary_dealer_share"
+    feature_role: target_diagnostic
+    default_tier: excluded
+    leakage_risk: "same as primary_dealer_share"
+    leakage_mitigation: "same as primary_dealer_share"
+
+  - canonical_feature_name: bid_to_cover_calculated
+    source_family: target_diagnostic
+    source_field_or_derivation: "targets.add_bid_to_cover"
+    description: "From-scratch bid-to-cover reconciliation against the API's own bid_to_cover_ratio -- an audit cross-check, verified to match exactly."
+    economic_rationale: "n/a -- audit diagnostic"
+    transformation: "see targets.py"
+    unit: "ratio"
+    dtype: "Float64"
+    applicable_forecast_cutoff: "n/a"
+    required_lookback: "n/a"
+    minimum_history: "n/a"
+    availability_provenance: "known only after the auction settles"
+    missingness_meaning: "missing if unsettled"
+    schema_period_limitations: "same as primary_dealer_share"
+    feature_role: target_diagnostic
+    default_tier: excluded
+    leakage_risk: "same as primary_dealer_share"
+    leakage_mitigation: "same as primary_dealer_share"
+
+  - canonical_feature_name: bid_to_cover_reconciliation_diff
+    source_family: target_diagnostic
+    source_field_or_derivation: "targets.add_bid_to_cover: bid_to_cover_ratio - bid_to_cover_calculated"
+    description: "API-minus-calculated reconciliation residual -- verified 0.0000 over the full main modeling sample."
+    economic_rationale: "n/a -- audit diagnostic"
+    transformation: "see targets.py"
+    unit: "ratio"
+    dtype: "Float64"
+    applicable_forecast_cutoff: "n/a"
+    required_lookback: "n/a"
+    minimum_history: "n/a"
+    availability_provenance: "known only after the auction settles"
+    missingness_meaning: "missing if unsettled"
+    schema_period_limitations: "same as primary_dealer_share"
+    feature_role: target_diagnostic
+    default_tier: excluded
+    leakage_risk: "same as primary_dealer_share"
+    leakage_mitigation: "same as primary_dealer_share"
+
+  # ============================================================
+  # Target-construction-only (Step 5) -- never in a predictor matrix
+  # ============================================================
+
+  - canonical_feature_name: dealer_share_regime_trailing_mean
+    source_family: target_construction
+    source_field_or_derivation: "dealer_absorption.add_regime_feature: trailing mean of primary_dealer_share over up to 8 preceding same-tenor auctions, shift(1) before rolling"
+    description: "Historical-outcome-derived regime feature: the trailing mean of the TARGET itself, used only as an input to fitting DealerAbsorptionSurpriseModel."
+    economic_rationale: "Captures a slowly-changing 'what counts as normal dealer participation lately' baseline for the Dealer Absorption Surprise construction -- not intended as an ordinary predictor."
+    transformation: "shift(1).rolling(8, min_periods=1).mean() within tenor"
+    unit: "fraction, 0-1"
+    dtype: "Float64"
+    applicable_forecast_cutoff: "n/a"
+    required_lookback: "up to 8 preceding same-tenor settled auctions"
+    minimum_history: "a tenor's own first several settled auctions"
+    availability_provenance: "derived from strictly-earlier auctions' own settled primary_dealer_share values -- itself leakage-safe row-by-row, but built from historical OUTCOMES, so it must never be treated as an ordinary pre-auction predictor"
+    missingness_meaning: "missing for a tenor's first auction(s), with no preceding settled history"
+    schema_period_limitations: "same as primary_dealer_share"
+    feature_role: target_construction_only
+    default_tier: excluded
+    leakage_risk: "built from historical target values; safe only when computed and consumed strictly inside DealerAbsorptionSurpriseModel.fit/.transform on a training-fold dataframe, per docs/target_specification.md"
+    leakage_mitigation: "role=target_construction_only keeps it out of the ordinary predictor matrix; Phase 6 must fit/transform it exactly as dealer_absorption.py already implements, never reuse a full-sample-computed copy across folds"
+
+  # ============================================================
+  # Deliberately excluded, full-sample-parameterized quantities (Step 5)
+  # ============================================================
+
+  - canonical_feature_name: dealer_absorption_surprise
+    source_family: target_construction
+    source_field_or_derivation: "dealer_absorption.DealerAbsorptionSurpriseModel.transform (NOT materialized in Phase 5)"
+    description: "The residual of primary_dealer_share after removing the training-fold-estimated expected share. Depends on parameters (group means, two slopes) that must be fit on a training fold, never on the full dataset."
+    economic_rationale: "n/a -- this is a fold-dependent derived target, not a fixed feature"
+    transformation: "see dealer_absorption.py"
+    unit: "fraction, signed"
+    dtype: "n/a -- not materialized"
+    applicable_forecast_cutoff: "n/a"
+    required_lookback: "n/a"
+    minimum_history: "n/a"
+    availability_provenance: "n/a"
+    missingness_meaning: "n/a"
+    schema_period_limitations: "n/a"
+    feature_role: excluded
+    default_tier: excluded
+    leakage_risk: "fitting DealerAbsorptionSurpriseModel on the full dataset (including future folds) would leak future distributional information into the past"
+    leakage_mitigation: "never materialized as one full-sample column; Phase 6 must fit on training-fold data only and transform train/eval rows with the frozen parameters, per docs/target_specification.md"
+
+  - canonical_feature_name: expected_dealer_share
+    source_family: target_construction
+    source_field_or_derivation: "dealer_absorption.DealerAbsorptionSurpriseModel.transform (NOT materialized in Phase 5)"
+    description: "The fitted expected primary-dealer share underlying dealer_absorption_surprise."
+    economic_rationale: "n/a -- fold-dependent derived quantity"
+    transformation: "see dealer_absorption.py"
+    unit: "fraction, 0-1"
+    dtype: "n/a -- not materialized"
+    applicable_forecast_cutoff: "n/a"
+    required_lookback: "n/a"
+    minimum_history: "n/a"
+    availability_provenance: "n/a"
+    missingness_meaning: "n/a"
+    schema_period_limitations: "n/a"
+    feature_role: excluded
+    default_tier: excluded
+    leakage_risk: "same as dealer_absorption_surprise"
+    leakage_mitigation: "same as dealer_absorption_surprise"
+
+  - canonical_feature_name: stress_event_threshold
+    source_family: target_construction
+    source_field_or_derivation: "dealer_absorption.StressThreshold.fit (NOT materialized in Phase 5)"
+    description: "A percentile threshold on dealer_absorption_surprise used to define the stress-event label. Must be fit on training-fold surprise values only."
+    economic_rationale: "n/a -- fold-dependent parameter, not a feature"
+    transformation: "see dealer_absorption.py"
+    unit: "fraction, signed"
+    dtype: "n/a -- not materialized"
+    applicable_forecast_cutoff: "n/a"
+    required_lookback: "n/a"
+    minimum_history: "n/a"
+    availability_provenance: "n/a"
+    missingness_meaning: "n/a"
+    schema_period_limitations: "n/a"
+    feature_role: excluded
+    default_tier: excluded
+    leakage_risk: "the Phase 2 illustrative pre-2020 threshold must never be reused as an evaluation threshold in a real chronological fold"
+    leakage_mitigation: "must be re-fit inside every Phase 6 chronological training fold, per docs/target_specification.md"
+
+  - canonical_feature_name: stress_event_label
+    source_family: target_construction
+    source_field_or_derivation: "dealer_absorption.StressThreshold.transform (NOT materialized in Phase 5)"
+    description: "The binary stress-event flag (surprise >= threshold), dependent on stress_event_threshold."
+    economic_rationale: "n/a -- fold-dependent derived label"
+    transformation: "see dealer_absorption.py"
+    unit: "boolean"
+    dtype: "n/a -- not materialized"
+    applicable_forecast_cutoff: "n/a"
+    required_lookback: "n/a"
+    minimum_history: "n/a"
+    availability_provenance: "n/a"
+    missingness_meaning: "n/a"
+    schema_period_limitations: "n/a"
+    feature_role: excluded
+    default_tier: excluded
+    leakage_risk: "same as stress_event_threshold"
+    leakage_mitigation: "same as stress_event_threshold"
+
+  - name_pattern: "forbidden auction-result fields (all of phase4d_source_joins.FORBIDDEN_RESULT_COLUMNS)"
+    source_family: excluded_result_fields
+    source_field_or_derivation: "Fiscal Data auctions API's own post-auction fields (yields, prices, accepted/tendered amounts, allocation percentages, accrued interest, the coupon rate itself) plus every targets.py-derived outcome field"
+    description: "Every field fixed only at or after the auction itself -- see phase4d_source_joins.FORBIDDEN_RESULT_COLUMNS for the exact, expandable list, and leakage_audit.py for pattern-based defenses against a renamed result field."
+    economic_rationale: "n/a -- these fields ARE the outcome, or are fixed at/after the auction"
+    transformation: "n/a"
+    unit: "n/a"
+    dtype: "n/a"
+    applicable_forecast_cutoff: "n/a"
+    required_lookback: "n/a"
+    minimum_history: "n/a"
+    availability_provenance: "known only after the auction closes/settles"
+    missingness_meaning: "n/a"
+    schema_period_limitations: "n/a"
+    feature_role: excluded
+    default_tier: excluded
+    leakage_risk: "the single most direct leakage vector in this project"
+    leakage_mitigation: "predictor matrices are built by selecting a fixed, small set of announcement-known auction identifier columns before any join -- a result field cannot enter through the auction side of a join; tests/test_feature_matrix.py asserts none of these columns are ever present, plus a name-pattern-based defense (leakage_audit.py) against a renamed but semantically equivalent field"
+
+  # ============================================================
+  # Audit / provenance family entries (per source)
+  # ============================================================
+
+  - name_pattern: "dealer_join_matched, dealer_observation_age_days"
+    source_family: dealer_stats
+    source_field_or_derivation: "dealer_join.as_of_join"
+    description: "Whether any dealer release was safely available by the cutoff, and its age in calendar days."
+    economic_rationale: "n/a -- provenance, never fed to a model automatically"
+    transformation: "n/a"
+    unit: "boolean / days"
+    dtype: "bool / float64"
+    applicable_forecast_cutoff: [announcement, pre_auction]
+    required_lookback: "n/a"
+    minimum_history: "n/a"
+    availability_provenance: "n/a"
+    missingness_meaning: "age is NaN only if no release matched at all"
+    schema_period_limitations: "n/a"
+    feature_role: audit_provenance
+    default_tier: audit_only
+    leakage_risk: "n/a"
+    leakage_mitigation: "n/a"
+
+  - name_pattern: "{dealer_series}_missing_reason"
+    source_family: dealer_stats
+    source_field_or_derivation: "dealer_join.as_of_join"
+    description: "Per-series reason a joined dealer value is missing: no coverage before the cutoff, the series' own regime not yet started, or a genuine source-reported '*' for the nearest release."
+    economic_rationale: "n/a -- provenance"
+    transformation: "n/a"
+    unit: "categorical string"
+    dtype: "string"
+    applicable_forecast_cutoff: [announcement, pre_auction]
+    required_lookback: "n/a"
+    minimum_history: "n/a"
+    availability_provenance: "n/a"
+    missingness_meaning: "null exactly when the corresponding value is present"
+    schema_period_limitations: "n/a"
+    feature_role: audit_provenance
+    default_tier: audit_only
+    leakage_risk: "n/a"
+    leakage_mitigation: "n/a"
+
+  - name_pattern: "rates_join_matched, rate_observation_age_calendar_days, rate_observation_age_business_days"
+    source_family: treasury_rates
+    source_field_or_derivation: "treasury_rates_join.as_of_join"
+    description: "Whether a rate was safely available by the cutoff, and its age in calendar/business days."
+    economic_rationale: "n/a -- provenance"
+    transformation: "n/a"
+    unit: "boolean / days"
+    dtype: "bool / float64"
+    applicable_forecast_cutoff: [announcement, pre_auction]
+    required_lookback: "n/a"
+    minimum_history: "n/a"
+    availability_provenance: "n/a"
+    missingness_meaning: "age is NaN only if no rate matched at all"
+    schema_period_limitations: "n/a"
+    feature_role: audit_provenance
+    default_tier: audit_only
+    leakage_risk: "n/a"
+    leakage_mitigation: "n/a"
+
+  - name_pattern: "{maturity}_missing_reason"
+    source_family: treasury_rates
+    source_field_or_derivation: "treasury_rates_join.as_of_join"
+    description: "Per-maturity reason a joined rate is missing: no coverage before the cutoff, or the source published an empty value for that maturity/date."
+    economic_rationale: "n/a -- provenance"
+    transformation: "n/a"
+    unit: "categorical string"
+    dtype: "string"
+    applicable_forecast_cutoff: [announcement, pre_auction]
+    required_lookback: "n/a"
+    minimum_history: "n/a"
+    availability_provenance: "n/a"
+    missingness_meaning: "null exactly when the corresponding value is present"
+    schema_period_limitations: "n/a"
+    feature_role: audit_provenance
+    default_tier: audit_only
+    leakage_risk: "n/a"
+    leakage_mitigation: "n/a"
+
+  - name_pattern: "cftc_join_matched, cftc_observation_age_calendar_days, cftc_observation_age_business_days, cftc_report_available, cftc_source_join_status, direct_contract_code, direct_contract_missing_reason, positioning_missing_reason, matched_contract_code, matched_contract_official_name, secondary_context_contract_codes"
+    source_family: cftc_positioning
+    source_field_or_derivation: "cftc_join.as_of_join / add_tenor_matched_positioning_features"
+    description: "Report-availability, contract-mapping, and provenance fields -- deliberately kept separate from ordinary positioning-value predictors (Phase 4 acceptance review, issue 9: source coverage vs. direct-contract mapping are two independent axes)."
+    economic_rationale: "n/a -- provenance/audit, except direct_contract_mapping_status, which is retained as an extended predictor above"
+    transformation: "n/a"
+    unit: "varies (boolean, days, categorical string)"
+    dtype: "varies"
+    applicable_forecast_cutoff: [announcement, pre_auction]
+    required_lookback: "n/a"
+    minimum_history: "n/a"
+    availability_provenance: "n/a"
+    missingness_meaning: "see cftc_join.py module docstring for the full state machine"
+    schema_period_limitations: "n/a"
+    feature_role: audit_provenance
+    default_tier: audit_only
+    leakage_risk: "n/a"
+    leakage_mitigation: "n/a"
+
+  - name_pattern: "{m}_join_matched, {m}_vintage_label, {m}_availability_precision, {m}_vintage_lag_calendar_days, {m}_observation_age_calendar_days, {m}_observation_date, {m}_source_gap_detected, {m}_expected_latest_observation_date, {m}_missing_reason"
+    source_family: rtdsm_macro
+    source_field_or_derivation: "rtdsm_join.as_of_join_variable, one family per RTDSM mnemonic (ROUTPUT/RUC/PCPI/IPT/EMPLOY/HSTARTS)"
+    description: "Vintage identity, release-calendar provenance, staleness, and source-gap diagnostics for each macro variable -- see rtdsm_join.py module docstring's 'direct observation vs. stale carry-forward vs. source gap' distinction."
+    economic_rationale: "n/a -- provenance/audit"
+    transformation: "n/a"
+    unit: "varies"
+    dtype: "varies"
+    applicable_forecast_cutoff: [announcement, pre_auction]
+    required_lookback: "n/a"
+    minimum_history: "n/a"
+    availability_provenance: "n/a"
+    missingness_meaning: "see rtdsm_join.py module docstring"
+    schema_period_limitations: "n/a"
+    feature_role: audit_provenance
+    default_tier: audit_only
+    leakage_risk: "n/a"
+    leakage_mitigation: "n/a"

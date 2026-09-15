@@ -1,0 +1,36 @@
+name: CI
+
+# Read-only, credential-free offline checks: lint + the default (non-live-network)
+# test suite. This workflow never downloads or regenerates bulk source data and
+# never requires a repository secret.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      # Pinned by immutable commit SHA (not a mutable version tag), with the
+      # human-readable release version in an adjacent comment. Verified live
+      # against the GitHub API during the Phase 9 acceptance review
+      # (2026-09-15) as each project's current official release tag.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
+        with:
+          python-version: "3.12"
+          enable-cache: true
+
+      - name: Install locked dependencies
+        run: uv sync --locked
+
+      - name: Lint
+        run: uv run ruff check .
+
+      - name: Offline test suite (live_network tests excluded by default)
+        run: uv run pytest -q

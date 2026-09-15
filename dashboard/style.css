@@ -1,0 +1,403 @@
+/* Treasury Auction Phase 8 dashboard.
+   Palette: the validated default categorical/status palette from this
+   project's dataviz guidance (fixed hue order, both light and dark
+   steps pass the CVD/contrast checks for this run's series counts). */
+
+:root {
+  color-scheme: light;
+  --surface-0: #f4f3f0;
+  --surface-1: #fcfcfb;
+  --surface-2: #ffffff;
+  --border: #dedcd4;
+  --text-primary: #0b0b0b;
+  --text-secondary: #52514e;
+  --text-muted: #7a7973;
+
+  --series-adaptive: #2a78d6;   /* slot 1 blue */
+  --series-frozen: #eb6834;     /* slot 2 orange */
+  --series-gbm: #1baf7a;        /* slot 3 aqua */
+  --series-shrinkage: #eda100;  /* slot 4 yellow */
+  --series-quantile-recent: #2a78d6;
+  --series-quantile-gbm: #1baf7a;
+  --series-no-skill: #9b9a92;   /* neutral reference, not a categorical identity */
+
+  --status-good: #0ca30c;
+  --status-warning: #fab219;
+  --status-serious: #ec835a;
+  --status-critical: #d03b3b;
+
+  --focus-ring: #2a78d6;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) {
+    color-scheme: dark;
+    --surface-0: #141413;
+    --surface-1: #1a1a19;
+    --surface-2: #202020;
+    --border: #34342f;
+    --text-primary: #ffffff;
+    --text-secondary: #c3c2b7;
+    --text-muted: #8f8e86;
+
+    --series-adaptive: #3987e5;
+    --series-frozen: #d95926;
+    --series-gbm: #199e70;
+    --series-shrinkage: #c98500;
+    --series-quantile-recent: #3987e5;
+    --series-quantile-gbm: #199e70;
+    --series-no-skill: #6f6e67;
+
+    --status-good: #1fbf1f;
+    --status-warning: #fab219;
+    --status-serious: #ec835a;
+    --status-critical: #e66767;
+  }
+}
+
+* { box-sizing: border-box; }
+
+/* The HTML `hidden` attribute must always win over any `display`
+   declaration set by a class further down this file (e.g. `.banner`'s
+   `display: flex`) -- otherwise a `hidden` element (like `#load-error`)
+   stays visibly rendered even though `.hidden` reads `true` in JS. This
+   rule is placed once, with `!important`, specifically so no later rule
+   in this file needs to remember to special-case `[hidden]` itself. */
+[hidden] { display: none !important; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  /* Chart/table wrappers below opt into their OWN horizontal scrolling
+     (`.chart-wrap`, `.table-wrap`); the document itself never should --
+     this is the backstop in case any element's intrinsic content width
+     (e.g. an unbroken flex item) would otherwise widen the whole page. */
+  overflow-x: hidden;
+  background: var(--surface-0);
+  color: var(--text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+}
+
+.skip-link {
+  position: absolute;
+  left: -999px;
+  top: 0;
+  background: var(--surface-2);
+  color: var(--text-primary);
+  padding: 8px 16px;
+  z-index: 100;
+}
+.skip-link:focus {
+  left: 8px;
+  top: 8px;
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px; height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.page-header {
+  background: var(--surface-1);
+  border-bottom: 1px solid var(--border);
+}
+.header-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px 20px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+.header-title-block h1 {
+  margin: 0 0 6px 0;
+  font-size: 1.5rem;
+}
+.subtitle {
+  margin: 0;
+  max-width: 60ch;
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+}
+.header-links {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.header-links a {
+  color: var(--series-adaptive);
+  text-decoration: none;
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+.header-links a:hover { text-decoration: underline; }
+
+main, .banner {
+  max-width: 1100px;
+  margin: 20px auto;
+  padding: 0 20px;
+}
+
+.panel {
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 24px;
+  margin-bottom: 20px;
+}
+.panel h2 {
+  margin-top: 0;
+  font-size: 1.15rem;
+}
+.chart-note, .filter-note, .chart-source {
+  color: var(--text-secondary);
+  font-size: 0.88rem;
+}
+.chart-source { color: var(--text-muted); margin-top: 6px; }
+.scope-note {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--border);
+}
+
+code {
+  background: var(--surface-0);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-size: 0.85em;
+}
+
+.banner {
+  border-radius: 8px;
+  padding: 12px 18px;
+  margin-bottom: 16px;
+  display: flex;
+  /* `#load-error` mixes plain text with several `<code>` children
+     directly (no wrapping `<span>`), so each becomes its own flex item;
+     `flex-wrap: nowrap` (the default) would force them all onto one row,
+     and each item's default `min-width: auto` refuses to shrink below
+     its own unbroken content (e.g. `http://localhost:8000`) -- together
+     this is exactly what forced the page wider than the viewport on a
+     390px screen. Wrapping lets items move to new lines instead. */
+  flex-wrap: wrap;
+  overflow-wrap: anywhere;
+  gap: 10px;
+  align-items: center;
+  font-size: 0.92rem;
+}
+.banner-warning {
+  background: color-mix(in srgb, var(--status-warning) 18%, var(--surface-1));
+  border: 1px solid var(--status-warning);
+  color: var(--text-primary);
+}
+.banner-critical {
+  background: color-mix(in srgb, var(--status-critical) 14%, var(--surface-1));
+  border: 1px solid var(--status-critical);
+  color: var(--text-primary);
+}
+
+.caveat-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 14px;
+  margin-top: 16px;
+}
+.caveat {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  background: var(--surface-0);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 14px;
+  font-size: 0.9rem;
+}
+.caveat-icon {
+  color: var(--status-serious);
+  font-size: 1.1rem;
+  line-height: 1.2;
+}
+
+.filter-panel {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  align-items: flex-end;
+}
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.9rem;
+}
+.filter-group label { color: var(--text-secondary); font-weight: 600; }
+.filter-checkbox label { display: flex; align-items: center; gap: 6px; font-weight: 400; }
+select, input[type="checkbox"] {
+  font: inherit;
+}
+select {
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text-primary);
+}
+.filter-note {
+  flex-basis: 100%;
+  margin: 4px 0 0 0;
+}
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 14px;
+}
+.kpi-tile {
+  background: var(--surface-0);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 16px;
+}
+.kpi-label {
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.kpi-value {
+  font-size: 1.6rem;
+  font-weight: 700;
+  margin: 4px 0 2px 0;
+}
+.kpi-unit {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+.chart-wrap {
+  overflow-x: auto;
+  margin: 10px 0;
+}
+.chart-wrap-half {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+.chart-svg {
+  width: 100%;
+  min-width: 480px;
+  height: 320px;
+  display: block;
+}
+.bar-rect { transition: opacity 0.1s ease; }
+.bar-rect:hover, .bar-rect:focus { opacity: 0.75; }
+.axis-line, .grid-line { stroke: var(--border); stroke-width: 1; }
+.axis-text { fill: var(--text-secondary); font-size: 11px; }
+.ref-line { stroke: var(--text-muted); stroke-width: 1.5; stroke-dasharray: 5 4; }
+.data-line { fill: none; stroke-width: 2; }
+.data-dot { stroke: var(--surface-1); stroke-width: 1.5; }
+.value-label { fill: var(--text-primary); font-size: 10.5px; }
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 6px;
+  font-size: 0.86rem;
+}
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.legend-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+.legend-swatch.dashed {
+  border-radius: 0;
+  height: 2px;
+  width: 16px;
+  align-self: center;
+}
+
+.tenor-detail {
+  background: var(--surface-0);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 16px;
+  margin-top: 10px;
+  font-size: 0.9rem;
+}
+.tenor-detail h3 {
+  margin: 4px 0 6px 0;
+  font-size: 1rem;
+}
+.tenor-detail ul {
+  margin: 0;
+  padding-left: 1.2em;
+}
+.tenor-detail li { margin-bottom: 4px; }
+
+.table-scroll-hint {
+  display: none;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  margin: 0 0 6px 0;
+}
+.table-wrap { overflow-x: auto; }
+table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.86rem;
+}
+th, td {
+  border-bottom: 1px solid var(--border);
+  padding: 7px 10px;
+  text-align: left;
+  white-space: nowrap;
+}
+th {
+  color: var(--text-secondary);
+  font-weight: 600;
+  background: var(--surface-0);
+}
+tr:hover td { background: var(--surface-0); }
+
+.not-shown-panel ul {
+  margin: 8px 0 0 0;
+  padding-left: 1.2em;
+}
+.not-shown-panel li { margin-bottom: 8px; }
+
+.page-footer {
+  max-width: 1100px;
+  margin: 0 auto 40px auto;
+  padding: 0 20px;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+}
+
+@media (max-width: 640px) {
+  .header-inner { flex-direction: column; }
+  .panel { padding: 16px; }
+  .table-scroll-hint { display: block; }
+}

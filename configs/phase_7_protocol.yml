@@ -1,0 +1,439 @@
+# Phase 7 protocol -- the single machine-readable source of truth for
+# the restrained set of adaptive/probabilistic comparisons this phase
+# runs. Written to the working tree BEFORE any Phase 7 model was fit or
+# scored -- but, as of that writing and as of every acceptance-review
+# pass, this file is UNTRACKED (`git status` shows it with `??`, never
+# staged or committed). "Frozen before scoring" describes the ORDER OF
+# OPERATIONS in this working tree during this session, not a git-commit
+# timestamp or any externally-verifiable pre-registration -- a git
+# commit could still be authored and backdated after the fact, so this
+# is a self-reported, working-tree-only discipline, not a cryptographic
+# or third-party-verifiable guarantee. Every downstream Phase 7 module
+# reads its decisions from this file, never from a second, hand-copied
+# set of constants -- same discipline as `configs/phase_6_evaluation.yml`
+# (which, unlike this file, IS actually committed to git, in commit
+# 0dd4bfe -- verified directly via `git log --follow`).
+#
+# docs/project_rules.md / task-specification rules this file exists to satisfy:
+# "Freeze the Phase 7 design before running its new models... do not
+# revise it based on outer-test scores." Phase 7's retrospective
+# results are explicitly NOT a pristine, untouched confirmation set
+# (2015-2026 was already examined in Phase 6) -- this document is
+# therefore a RESTRAINED, pre-declared design choice, not a claim of
+# strict pre-registration in the sense Phase 6 could make. No model
+# family, feature tier, threshold, or "winner" in this file was chosen
+# by inspecting any Phase 7 out-of-sample score.
+
+metadata:
+  document: "Phase 7 protocol"
+  status: "frozen before scoring; implementation in progress"
+  frozen_before_scoring: true
+  not_a_pristine_holdout: >
+    2015-2025 (and provisional 2026) were already inspected during
+    Phase 6. This freeze document constrains what Phase 7 is ALLOWED to
+    try and in what order, so that no choice below is made by
+    repeatedly looking at Phase 7's own outer-test scores -- but it
+    does not and cannot claim these years were never seen by anyone on
+    this project before.
+  change_log:
+    - date: "2026-09-13"
+      change: "Initial freeze. No prior version existed."
+    - date: "2026-09-13"
+      change: >
+        Acceptance-review pass (the Phase 7 acceptance review):
+        corrected "written and committed" wording (this file is
+        untracked by git, never committed); promoted three previously
+        prose-only numeric decisions (stress_event_gate.
+        threshold_percentile, min_pooled_positive_count,
+        min_year_positive_count, and probabilistic.
+        conservative_baseline_method.
+        min_residuals_per_tenor_fallback_threshold) to structured,
+        machine-checkable fields; added gbm_challenger.
+        fallback_if_insufficient_history.random_state=42 (previously
+        undeclared, though the code always used it). No model,
+        hyperparameter, feature tier, or threshold VALUE was changed --
+        every numeric constant added here matches the value the code
+        already used before this review, verified by
+        tests/test_phase7_protocol_contract.py.
+
+targets:
+  primary: primary_dealer_share
+  # Phase 7's mandatory scope is the primary target only, per the task
+  # specification's restraint instruction -- secondary targets
+  # (direct/indirect bidder share, bid-to-cover) are explicitly OUT OF
+  # SCOPE for Phase 7's new models (adaptive baseline, GBM, shrinkage,
+  # quantiles, stress classifier). Re-running Phase 6's existing
+  # secondary-target ladder is unaffected and untouched by Phase 7.
+  clipping: {lower: 0.0, upper: 1.0}
+
+cutoff_views: [announcement, pre_auction]
+
+fold_schedule:
+  reused_from: "configs/phase_6_evaluation.yml fold_schedule -- identical initial_training_span, complete_test_years, provisional_test_year, and fold construction rule (treasury_auction_stress.evaluation.timing.build_fold). Phase 7 never re-derives a different fold calendar."
+  initial_training_span: {start: "2010-01-01", end: "2014-12-31"}
+  complete_test_years: [2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025]
+  provisional_test_year: 2026
+
+predictor_tier:
+  name: core
+  description: >
+    Every new Phase 7 model (GBM challenger, shrinkage model's optional
+    covariates, stress-event classifier) uses the SAME core tier (36
+    Phase 5 predictors) already used by Phase 6's core_ridge/
+    core_elastic_net -- reused via
+    treasury_auction_stress.features.feature_manifest.literal_predictor_names,
+    never a second, hand-copied list. No extended-tier sensitivity
+    experiment is run in Phase 7: the task specification asks for
+    restraint, and Phase 6 already ran that sensitivity check once.
+
+randomness_control:
+  rule: >
+    Every stochastic estimator (HistGradientBoostingRegressor /
+    Classifier) is fit with a single fixed random_state=42 everywhere
+    it appears in this project. Ridge, Elastic Net, the shrinkage
+    estimator, and Logistic Regression are all deterministic given
+    their inputs and require no seed. No result in this phase depends
+    on an unseeded random draw.
+
+# ============================================================
+# Adaptive recent-history benchmark (Step 2, item 1)
+# ============================================================
+
+adaptive_recent_history:
+  model_id: baseline_recent_history_adaptive
+  n_lookback: 8   # identical to Phase 6's baseline_recent_history, for direct comparability
+  definition: >
+    Same tenor-conditional recent-history mean as Phase 6's
+    baseline_recent_history, but ALLOWED to update auction-by-auction
+    WITHIN a test year, using an auction's own result only once it
+    satisfies the project's conservative result-safe-availability rule
+    (result_safe_available_date <= the auction being predicted's OWN
+    prediction cutoff for that cutoff view). This is a genuinely
+    different information set per test-year row (not a single
+    fold-frozen constant), computed via
+    treasury_auction_stress.features.safe_as_of_lookback.
+    safe_as_of_trailing_mean, which is ALSO the shared primitive used
+    by the stress-event gate's safe regime feature below -- one tested
+    implementation, not two.
+  tie_break: >
+    Deterministic: rows are never ordered by raw auction_date alone.
+    The safe-availability filter (result_safe_available_date <= this
+    row's own cutoff) is applied per (row, candidate) pair directly,
+    so same-day announcements and same-day-result auctions can never
+    be given a manufactured relative order -- a same-day sibling is
+    included or excluded solely by whether ITS result_safe_available_
+    date clears THIS row's own cutoff, never by row position. Within
+    the n_lookback selection itself (choosing which qualifying prior
+    auctions are "most recent"), ties are broken by
+    (auction_date, auction_key) ascending, matching Phase 6's own
+    RecentHistoryBaseline tie-break discipline.
+  fallback: >
+    Identical fallback hierarchy to Phase 6's baseline_recent_history:
+    fewer than n_lookback qualifying same-tenor observations -> use
+    however many exist; zero for that tenor -> the frozen fold's own
+    training-pool global mean (never a test-year value).
+  reported_separately_from_phase_6_frozen_baseline: true
+  frozen_counterpart_model_id: baseline_recent_history_frozen
+  frozen_counterpart_note: >
+    baseline_recent_history_frozen is Phase 6's existing
+    baseline_recent_history, re-fit inside Phase 7's own pipeline
+    (identical class, identical fold construction) so the two appear
+    side by side on identical auction keys in one table -- not merely
+    cited from the Phase 6 report.
+
+# ============================================================
+# Nonlinear point-forecast challenger (Step 2, item 2)
+# ============================================================
+
+gbm_challenger:
+  model_id: challenger_gbm_core
+  library: "scikit-learn (already a project dependency; no new package added)"
+  estimator: "sklearn.ensemble.HistGradientBoostingRegressor"
+  rationale: >
+    A small, regularized gradient-boosted-tree model, per the task
+    specification's explicit preference. HistGradientBoostingRegressor
+    is chosen over adding a new dependency (LightGBM/XGBoost) because
+    it already ships with scikit-learn (>=1.9.0, already a project
+    dependency), natively handles missing values without a separate
+    imputer (a real difference from the linear models' pipeline,
+    disclosed below, not a leakage risk -- the missingness pattern is
+    learned from training-fold data only, per split, exactly like every
+    other learned parameter in this project), and supports a
+    monotonic quantile loss used again in the probabilistic section.
+  predictor_tier: core
+  missing_value_handling: >
+    HistGradientBoostingRegressor's native NaN routing is used directly
+    -- no SimpleImputer. The 100%-missing-in-training-fold column-drop
+    rule is still applied first (same as the linear models), because a
+    column with literally zero training signal should not be offered to
+    the tree-splitter at all. A partially-missing column is left as-is
+    (native handling), which is a materially different, and disclosed,
+    choice from the linear models' median-imputation-plus-indicator
+    scheme -- both are trained strictly on that fold's own training
+    pool, so neither leaks.
+  categorical_handling: "tenor is passed as a native categorical column (HistGradientBoostingRegressor categorical_features=['tenor']); no one-hot expansion."
+  regularization_constraints:
+    max_iter: [50, 100]
+    max_depth: [2, 3]
+    learning_rate: [0.05, 0.1]
+    max_leaf_nodes: 15      # fixed, not tuned -- keeps the grid modest
+    min_samples_leaf: 20    # fixed, not tuned -- meaningful regularization at this sample size (~500-1200 training rows/fold)
+    l2_regularization: 1.0  # fixed, not tuned
+    random_state: 42
+  grid_size: 8   # 2 x 2 x 2, comparable to Phase 6's elastic-net 12-point grid
+  fallback_if_insufficient_history:
+    max_iter: 100
+    max_depth: 3
+    learning_rate: 0.1
+    max_leaf_nodes: 15
+    min_samples_leaf: 20
+    l2_regularization: 1.0
+    random_state: 42
+  hyperparameter_selection: >
+    Identical mechanism to Phase 6's linear models: nested single
+    chronological inner holdout
+    (treasury_auction_stress.evaluation.timing.build_inner_holdout),
+    same MIN_INNER_CV_YEARS/MIN_INNER_CV_TRAIN_ROWS thresholds, scored
+    by MAE on primary_dealer_share's own raw units on the inner
+    validation set. Never looks at the outer fold's own test year.
+  no_architecture_search: >
+    No other tree/boosting library, loss function, or architecture is
+    tried. This is the single, pre-declared nonlinear challenger.
+
+# ============================================================
+# Partial-pooling / shrinkage challenger (Step 2, item 3)
+# ============================================================
+
+shrinkage_challenger:
+  model_id: challenger_shrinkage_tenor_reopening
+  family: "empirical Bayes / James-Stein-style shrinkage estimator -- NOT a full Bayesian model, never described as one"
+  structure: >
+    Two-level shrinkage, fit strictly inside each fold's own training
+    pool, applied only to (tenor, is_reopening) group means -- the
+    exact same grouping Phase 6's baseline_tenor_reopening_mean uses,
+    unshrunk. Level 1 shrinks each tenor's own mean toward the training
+    pool's global mean; level 2 shrinks each (tenor, is_reopening) cell
+    mean toward its OWN tenor's (already-shrunk) level-1 mean -- the
+    "wider historical pool" a sparse cell borrows strength from.
+  shrinkage_formula: >
+    For a group g with n_g training observations, own mean m_g, and
+    prior (wider-pool) mean mu: shrunk_g = w_g * m_g + (1 - w_g) * mu,
+    where w_g = n_g / (n_g + k) and k = within_group_variance /
+    between_group_variance, both estimated once per fold by the
+    standard one-way ANOVA method-of-moments estimator (pooled
+    within-group sample variance; between-group variance as the
+    variance of group means around the grand mean, mean-square-error-
+    corrected for finite sample size, floored at a small positive
+    epsilon to avoid division by zero when between-group variance is
+    estimated non-positive). k is a DATA-DRIVEN constant per fold, not
+    a tuned hyperparameter searched via inner CV -- no grid search is
+    run for this model.
+  why_this_could_help_sparse_tenors: >
+    20-Year has no history before 2020-05-20 and therefore very few
+    training-eligible (tenor, is_reopening) cells in any early fold --
+    Phase 6's baseline_tenor_reopening_mean already has an explicit
+    fallback hierarchy for a cell with ZERO observations, but a cell
+    with a HANDFUL of observations (not zero) is still given full
+    weight on its own noisy mean. Shrinkage instead gives partial,
+    continuously-graded weight based on how much training history that
+    specific cell actually has, which is exactly the situation Phase 6's
+    all-or-nothing fallback hierarchy does not address.
+  interpretability: >
+    Every shrunk estimate is reportable as "own group mean", "wider-pool
+    mean it is shrunk toward", and "shrinkage weight w_g" -- three
+    numbers, no opaque parameters, consistent with this project's
+    stated preference (docs/project_plan.md) for models whose behavior
+    can be explained in one sentence per auction.
+
+# ============================================================
+# Probabilistic forecasts (Step 2, item 4)
+# ============================================================
+
+probabilistic:
+  quantile_levels: [0.05, 0.10, 0.25, 0.50, 0.75, 0.90, 0.95]
+  nominal_intervals_reported: ["50% (q25-q75)", "80% (q10-q90)", "90% (q05-q95)"]
+  calibration_window: >
+    The fold's own full expanding-window training pool (identical rows
+    used to fit that fold's point models) -- never a separately chosen
+    lookback window, and never re-picked per fold based on how well it
+    performs.
+  distinguishing_outcome_vs_parameter_uncertainty: >
+    Both probabilistic methods below quantify OUTCOME uncertainty (the
+    spread of primary_dealer_share around a point forecast) using
+    empirical residual/quantile dispersion. Neither method separately
+    models PARAMETER uncertainty (i.e., how uncertain the group means
+    or tree splits themselves are, given a finite training sample) --
+    this is disclosed explicitly in the report, not silently ignored;
+    a fully Bayesian or bootstrap-based parameter-uncertainty layer is
+    out of scope for this restrained phase.
+  conservative_baseline_method:
+    model_id: quantile_recent_history_residual
+    description: >
+      Prediction intervals built around baseline_recent_history_frozen's
+      OWN point forecast (chosen for continuity with Phase 6's already-
+      reported baseline, not the adaptive variant) by adding empirical
+      quantiles of WALK-FORWARD (cross-fitted, never in-sample) training
+      residuals. Walk-forward residuals are generated by
+      treasury_auction_stress.evaluation.walk_forward: within the
+      fold's own training pool, refit RecentHistoryBaseline on each
+      inner year's own strictly-prior years and predict that inner
+      year, collecting out-of-fold residuals -- avoiding the in-sample
+      residual-variance-understatement problem this project's stress-
+      event work also has to guard against. The very first calendar
+      year of the training pool is excluded (no strictly-prior inner
+      fold exists yet), matching
+      treasury_auction_stress.features.dealer_absorption.
+      compute_walk_forward_surprise's existing precedent.
+    pooling_fallback: >
+      Residual quantiles are computed per tenor first; a tenor with
+      fewer than min_residuals_per_tenor_fallback_threshold (below)
+      walk-forward residuals in a given fold falls back to the
+      pooled-across-tenor residual quantile distribution for that fold
+      (declared threshold, never adjusted after seeing a coverage
+      result).
+    min_residuals_per_tenor_fallback_threshold: 30
+  prespecified_challenger:
+    model_id: quantile_gbm_core
+    description: >
+      HistGradientBoostingRegressor with loss="quantile", one fit per
+      quantile level, predictor_tier=core (same features as
+      challenger_gbm_core).
+    hyperparameter_reuse: >
+      Reuses the SAME tree-structure hyperparameters
+      challenger_gbm_core's own inner-CV selected for that fold (only
+      `loss` and `quantile` change) -- no separate hyperparameter search
+      is run per quantile level, to keep this phase's total model
+      search modest, as required.
+    monotonicity_fix: >
+      Predicted quantiles are sorted row-wise after prediction (a
+      standard, disclosed fix for quantile crossing across independently
+      fit quantile regressions) -- never re-estimated or blended.
+  metrics:
+    - pinball_loss (per quantile level, and averaged across quantile_levels)
+    - empirical_interval_coverage (per nominal_intervals_reported entry)
+    - interval_width (mean, per nominal interval)
+    - all of the above broken down by test year and by tenor, with counts
+  no_recalibration_using_the_scored_year: >
+    Quantile levels, calibration window, and pooling-fallback threshold
+    are fixed by this document before any fold was scored. No coverage
+    result for any year is used to adjust any of them.
+
+# ============================================================
+# Dealer Absorption Surprise / stress-event gate (Step 3)
+# ============================================================
+
+stress_event_gate:
+  status: "gate to be evaluated by code; if it fails, no classifier score is published (see Step 3 of the task specification)"
+  estimand: >
+    dealer_absorption_surprise (docs/target_specification.md) computed
+    with a SAFE regime feature (below), used purely as an OPERATIONAL
+    high-dealer-absorption LABEL for classification -- explicitly NOT a
+    claim that a flagged auction "failed" or that the market was
+    "distressed." This distinction is restated in every report table
+    this gate produces.
+  safe_regime_feature: >
+    Replaces the Phase 6-flagged-leaky add_regime_feature entirely.
+    For row i (own cutoff = announcement_cutoff_date or
+    pre_auction_cutoff_date, per cutoff_view) and its own tenor, the
+    safe regime value is the mean of primary_dealer_share over the
+    up-to-8 most recent SAME-tenor auctions (from the full pool, train
+    and test alike) whose OWN result_safe_available_date <=
+    row i's own cutoff -- computed by
+    treasury_auction_stress.features.safe_as_of_lookback.
+    safe_as_of_trailing_mean, the SAME shared primitive the adaptive
+    recent-history benchmark above uses. This is safe BY CONSTRUCTION
+    for every row (train or test) because it is filtered by actual
+    availability timestamps, never by auction_date sort order -- same-
+    day and closely-spaced same-tenor auctions can never be given a
+    manufactured relative order, which is exactly the class of defect
+    Phase 6's dealer_absorption_audit found in the naive version.
+  cross_fitted_training_label_construction: >
+    Fitting DealerAbsorptionSurpriseModel once on an outer fold's full
+    training pool and then scoring that SAME pool's own residuals would
+    understate residual variance in-sample (the OLS fit exists
+    specifically to minimize that residual). Training labels are
+    instead built via treasury_auction_stress.evaluation.walk_forward:
+    within the outer training pool, walk forward one calendar year at a
+    time, fitting DealerAbsorptionSurpriseModel (using the safe regime
+    feature above) on strictly-prior years only and transforming the
+    next year -- exactly mirroring
+    dealer_absorption.compute_walk_forward_surprise's existing
+    walk-forward discipline, generalized to be reusable. Training rows
+    in the training pool's own first calendar year (no strictly-prior
+    inner fold exists) get a MISSING surprise/label -- excluded from
+    the classifier's training set explicitly, never silently treated as
+    negative.
+  threshold: >
+    StressThreshold fit ONCE per outer fold on the cross-fitted (never
+    in-sample) training surprise series at the percentile given by
+    threshold_percentile (below) -- a single, pre-declared choice, not
+    compared against other percentiles for this classifier; Phase 2's
+    describe_percentile_thresholds descriptive comparison remains
+    purely descriptive and is not reused as a selection procedure
+    here.
+  threshold_percentile: 0.90
+  test_labels: >
+    A SEPARATE DealerAbsorptionSurpriseModel, fit on the outer fold's
+    ENTIRE training pool (using the safe regime feature), is applied
+    via .transform to the test year's rows -- legitimate because the
+    test year is temporally entirely after the training pool, so this
+    is an ordinary out-of-sample transform, not in-sample scoring. The
+    SAME cross-fitted threshold (previous bullet) is applied to these
+    test-row surprises to produce test labels. Test outcomes never
+    influence the model or the threshold used to predict them.
+  min_pooled_positive_count: 30
+  min_year_positive_count: 5
+  data_sufficiency_criteria_checked_before_any_classifier_score_is_published:
+    - "pooled positive-label count across all complete test years (both cutoffs pooled separately) >= min_pooled_positive_count, else classifier scores are not published for that cutoff view at all"
+    - "a complete test year's own positive count >= min_year_positive_count required before that year's own classifier metrics (PR-AUC, Brier, calibration, confusion table) are shown; a year below this is shown only as a labeled count, its own metrics suppressed with a stated reason"
+    - "the label's definition (threshold_percentile of cross-fitted surprise) must be checked to mean the same operational thing in every fold: verified by confirming the surprise construction and threshold percentile are identical code paths across folds (never a per-fold-varying definition)"
+    - "missing/unavailable labels (first-training-year warm-up rows) are counted and reported, never silently coded as the negative class"
+  classifier:
+    model_id: stress_classifier_logistic_core
+    estimator: "sklearn.linear_model.LogisticRegression(penalty='l2')"
+    predictor_tier: "core (identical to the point-forecast models); the safe regime feature is NOT included as a classifier input, to keep the classifier's own feature set identical to, and comparable with, the point-forecast challengers"
+    hyperparameter_grid: {C: [0.1, 1.0, 10.0]}
+    hyperparameter_selection: "same nested inner-holdout mechanism as the other tuned models, scored by Brier score (not accuracy) on the inner validation set"
+    decision_rule_for_confusion_table: >
+      Predicted probability >= that fold's OWN training-label
+      prevalence (never 0.5 by default, never chosen by looking at the
+      test year's own confusion matrix, never re-picked after seeing a
+      result).
+  metrics_if_gate_passes:
+    - prevalence (train and test, per fold and pooled)
+    - brier_score
+    - pr_auc (with positive-example counts alongside, never reported alone)
+    - calibration (predicted-probability decile vs. observed frequency table)
+    - confusion_table_at_decision_rule
+  if_gate_fails: >
+    Document the specific blocking criterion with the actual computed
+    counts, leave the classifier deferred, and complete the point and
+    probabilistic forecasting work regardless -- per the task
+    specification, a failed gate is not a reason to withhold the rest
+    of Phase 7.
+
+# ============================================================
+# Decision rule for describing results (Step 1 requirement)
+# ============================================================
+
+decision_rule_for_reported_results: >
+  A Phase 7 challenger is described as "an improvement over the
+  recent-history benchmark" only if it beats BOTH
+  baseline_recent_history_frozen AND baseline_recent_history_adaptive
+  (whichever is the relevant matched comparison for that model) on a
+  pooled-MAE basis AND on a per-year-win-count basis (strictly more
+  complete test years won than lost) at BOTH cutoff views. Meeting the
+  bar at only one cutoff view, or only on pooled MAE while losing the
+  per-year count, is reported as "mixed," never rounded up to "wins."
+  No model, feature tier, calibration method, or threshold in this
+  document was selected, adjusted, or dropped by inspecting outer-test
+  performance after this file was written -- if a future correction is
+  ever needed, it is recorded as a new `change_log` entry above, with
+  the reason, never a silent edit.
+
+excluded_from_phase_7:
+  - "any extended-tier (core+extended) sensitivity experiment (Phase 6 already ran this once)"
+  - "any secondary-target (direct/indirect bidder share, bid-to-cover) new modeling"
+  - "any architecture beyond one GBM configuration family and one shrinkage estimator"
+  - "any recalibration of quantile levels, calibration windows, or the stress percentile using an outer-test result"
+  - "trading P&L, Sharpe ratio, or any causal claim"

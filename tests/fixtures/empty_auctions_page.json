@@ -1,0 +1,18 @@
+{
+  "data": [],
+  "meta": {
+    "count": 0,
+    "labels": {},
+    "dataTypes": {},
+    "dataFormats": {},
+    "total-count": 0,
+    "total-pages": 1
+  },
+  "links": {
+    "self": "&page%5Bnumber%5D=1&page%5Bsize%5D=0",
+    "first": "&page%5Bnumber%5D=1&page%5Bsize%5D=0",
+    "prev": null,
+    "next": null,
+    "last": "&page%5Bnumber%5D=1"
+  }
+}

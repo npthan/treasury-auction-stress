@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Treasury Auction Dealer-Share Forecasts — Phase 8 Dashboard</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to main content</a>
+
+<header class="page-header">
+  <div class="header-inner">
+    <div class="header-title-block">
+      <h1>Treasury Auction Dealer-Share Forecasts</h1>
+      <p class="subtitle">
+        Forecasting primary-dealer take-down at U.S. Treasury nominal-coupon auctions,
+        using only information publicly available before each auction. A retrospective
+        research diagnostic, not a trading tool.
+      </p>
+    </div>
+    <div class="header-links">
+      <a href="../README.md">Project README</a>
+      <a href="../docs/point_in_time_rules.md">Point-in-time rules</a>
+      <a href="https://fiscaldata.treasury.gov/datasets/treasury-securities-auctions-data/">Data source</a>
+    </div>
+  </div>
+</header>
+
+<div class="banner banner-warning" id="load-error" hidden>
+  Could not load <code>data/phase8_dashboard_data.json</code>. If you opened this file
+  directly (a <code>file://</code> URL), your browser blocks local JSON fetches — run
+  <code>python3 -m http.server 8000</code> from the repository root (the parent of this
+  <code>dashboard/</code> directory, not this directory itself) and open
+  <code>http://localhost:8000/dashboard/</code> instead. Serving from this directory alone
+  will also 404 the "Project README" and "Point-in-time rules" links above, since
+  they live one level up from this directory.
+</div>
+
+<main id="main" hidden>
+
+  <section class="panel intro-panel" aria-labelledby="headline-heading">
+    <h2 id="headline-heading">Headline finding</h2>
+    <p>
+      In this retrospective backtest (11 complete test years, 2015&ndash;2025, plus a
+      provisional partial year 2026), a simple <strong>recency-based baseline</strong>
+      that is allowed to update within the test year (<em>adaptive</em>) beat the same
+      baseline frozen for the whole year (<em>frozen</em>), and both beat two more
+      complex challengers (a gradient-boosted-tree model and a shrinkage estimator).
+      Recency and safely-available within-year updates mattered more than model
+      complexity in this sample. The two baselines use <strong>different information
+      schedules</strong> (see the chart note below) &mdash; this is not a claim that
+      "adaptive" is a fundamentally better model family, only that it had a real,
+      disclosed information advantage.
+    </p>
+    <div class="caveat-list" role="list">
+      <div class="caveat" role="listitem">
+        <span class="caveat-icon" aria-hidden="true">&#9888;</span>
+        <span><strong>Proxy, not stress.</strong> Dealer take-down share is an auction-allocation
+        measure &mdash; at most a proxy for balance-sheet absorption, not a direct
+        measure of dealers' final holdings, funding stress, or auction "success."</span>
+      </div>
+      <div class="caveat" role="listitem">
+        <span class="caveat-icon" aria-hidden="true">&#9888;</span>
+        <span><strong>Stress classifier: gate passed, calibration failed.</strong> Enough
+        stress events existed to evaluate the classifier, but its probabilities are
+        roughly 2&ndash;2.3&times; worse (Brier score) than a trivial no-skill forecast.
+        It is not a reliable stress detector.</span>
+      </div>
+      <div class="caveat" role="listitem">
+        <span class="caveat-icon" aria-hidden="true">&#9888;</span>
+        <span><strong>Coverage drifts by year.</strong> The residual-quantile method's
+        ~92% pooled 90%-interval coverage hides real under-coverage early and
+        over-coverage late in the sample &mdash; pooled coverage alone is not evidence
+        of stable calibration.</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel filter-panel" aria-label="Global filters">
+    <div class="filter-group">
+      <label for="cutoff-select">Prediction cutoff</label>
+      <select id="cutoff-select">
+        <option value="announcement">Announcement (terms public, before auction)</option>
+        <option value="pre_auction">Pre-auction (previous business day close)</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label for="tenor-select">Tenor</label>
+      <select id="tenor-select">
+        <option value="__all__">All tenors (pooled)</option>
+      </select>
+    </div>
+    <div class="filter-group filter-checkbox">
+      <label>
+        <input type="checkbox" id="provisional-toggle" />
+        Show provisional 2026 alongside complete years (by-year chart)
+      </label>
+    </div>
+    <p class="filter-note">
+      One cutoff and one tenor apply to every chart on this page at once &mdash; charts
+      never mix an announcement-cutoff number with a pre-auction one, or blend the
+      provisional 2026 partial year into a complete-year average. The one exception is
+      the "MAE by tenor" chart just below: since its whole purpose is comparing all
+      seven tenors side by side, selecting a tenor there <strong>highlights</strong> that
+      tenor's bars among all of them rather than hiding the other six &mdash; every other
+      panel on this page (KPIs, MAE by year, coverage/width, the stress panel, and case
+      studies) is recomputed on ONLY the selected tenor's own auctions. Each panel's own
+      sample size (n) is shown below it so a small-sample tenor is never mistaken for a
+      pooled one.
+    </p>
+  </section>
+
+  <section class="panel kpi-panel" aria-labelledby="kpi-heading">
+    <h2 id="kpi-heading" class="visually-hidden">Headline metrics</h2>
+    <div class="kpi-grid" id="kpi-grid"></div>
+    <p class="scope-note" id="scope-note-kpi"></p>
+  </section>
+
+  <section class="panel chart-panel" aria-labelledby="mae-year-heading">
+    <h2 id="mae-year-heading">Point-forecast error (MAE) by test year</h2>
+    <p class="chart-note">
+      Mean absolute error of <code>primary_dealer_share</code>, in percentage points,
+      out-of-sample, one bar group per complete test year. Lower is better. The frozen
+      and adaptive recent-history baselines use different information schedules (see
+      "What this does not show"); the GBM and shrinkage challengers did not beat either
+      baseline in this backtest.
+    </p>
+    <div class="chart-wrap">
+      <svg id="chart-mae-year" class="chart-svg" role="img" aria-label="Grouped bar chart of mean absolute error by test year and model"></svg>
+    </div>
+    <div class="legend" id="legend-mae-year"></div>
+    <p class="chart-source">Source: <code>phase_7_point_predictions.parquet</code> via <code>build_point_by_year_table</code>, recomputed on the selected tenor only when one is chosen. n per year shown on hover.</p>
+    <p class="scope-note" id="scope-note-mae-year"></p>
+  </section>
+
+  <section class="panel chart-panel" aria-labelledby="mae-tenor-heading">
+    <h2 id="mae-tenor-heading">Point-forecast error (MAE) by tenor</h2>
+    <p class="chart-note">
+      Complete test years only (2015&ndash;2025), pooled by tenor. The 20-Year tenor has
+      no history before its 2020-05-20 reintroduction, so its early folds lean more on
+      fallback behavior &mdash; read its bar with that structural caveat. <strong>This
+      chart is the one exception to the global tenor filter</strong>: it always shows
+      all seven tenors so they can be compared; selecting a tenor above highlights it
+      here instead of hiding the rest (see the detail panel below the chart).
+    </p>
+    <div class="chart-wrap">
+      <svg id="chart-mae-tenor" class="chart-svg" role="img" aria-label="Grouped bar chart of mean absolute error by tenor and model"></svg>
+    </div>
+    <div class="legend" id="legend-mae-tenor"></div>
+    <div class="tenor-detail" id="tenor-detail" hidden></div>
+    <p class="chart-source">Source: <code>phase_7_point_predictions.parquet</code> via <code>build_point_by_tenor_table</code>. Select a tenor above to highlight it and see its detail.</p>
+  </section>
+
+  <section class="panel chart-panel" aria-labelledby="coverage-heading">
+    <h2 id="coverage-heading">Prediction-interval coverage <em>and</em> width, by year</h2>
+    <p class="chart-note">
+      Interval: <select id="interval-select" aria-label="Nominal interval">
+        <option value="50%">50%</option>
+        <option value="80%">80%</option>
+        <option value="90%" selected>90%</option>
+      </select>
+      A well-calibrated interval's coverage line should sit near the dashed nominal
+      line. Coverage is never shown without its width (below) and sample count.
+    </p>
+    <div class="chart-wrap">
+      <svg id="chart-coverage-year" class="chart-svg" role="img" aria-label="Line chart of empirical interval coverage by year"></svg>
+    </div>
+    <div class="chart-wrap">
+      <svg id="chart-width-year" class="chart-svg" role="img" aria-label="Bar chart of mean interval width by year"></svg>
+    </div>
+    <div class="legend" id="legend-coverage"></div>
+    <p class="chart-source">Source: <code>phase_7_probabilistic_predictions.parquet</code> via <code>build_probabilistic_by_year_table</code>, recomputed on the selected tenor only when one is chosen. Complete test years only; provisional 2026 excluded from this trend view.</p>
+    <p class="scope-note" id="scope-note-coverage"></p>
+  </section>
+
+  <section class="panel chart-panel" aria-labelledby="stress-heading">
+    <h2 id="stress-heading">Stress-event classifier vs. no-skill baseline</h2>
+    <div class="banner banner-critical" role="status">
+      <span aria-hidden="true">&#9888;</span>
+      <span>The classifier's Brier score is <strong>worse</strong> than always predicting
+      each fold's own training-event rate ("no-skill"). Its probabilities should not be
+      trusted as a stress indicator, despite non-trivial ranking ability (PR-AUC).</span>
+    </div>
+    <p class="chart-note">
+      "Gate passed" means there were enough labeled stress events (&ge;30 pooled, &ge;5
+      per shown year) to evaluate the classifier at all &mdash; it is not a claim of good
+      performance. When a single tenor is selected below, this panel recomputes on only
+      that tenor's own labeled auctions; several tenors fall under the 5-positive gate
+      used elsewhere in this project once split out this way, and the panel says so
+      explicitly rather than showing an unreliable number silently.
+    </p>
+    <div class="banner banner-warning" id="stress-tenor-insufficient" hidden></div>
+    <div class="chart-wrap chart-wrap-half">
+      <svg id="chart-stress-brier" class="chart-svg" role="img" aria-label="Bar chart comparing classifier Brier score to no-skill baseline"></svg>
+      <svg id="chart-stress-prauc" class="chart-svg" role="img" aria-label="Bar chart comparing classifier PR-AUC to the base rate"></svg>
+    </div>
+    <div class="legend" id="legend-stress"></div>
+    <p class="chart-source">Source: <code>phase_7_classifier_predictions.parquet</code> via <code>evaluation.stress_event.compute_classifier_metrics</code>, joined to tenor by auction key when a tenor is selected.</p>
+    <p class="scope-note" id="scope-note-stress"></p>
+  </section>
+
+  <section class="panel table-panel" aria-labelledby="case-studies-heading">
+    <h2 id="case-studies-heading">Case studies: frozen vs. adaptive</h2>
+    <p class="chart-note">
+      Selection rule, fixed in code (never chosen to flatter either model): the single
+      largest adaptive improvement, the single largest adaptive deterioration, and the
+      auction closest to the median improvement ("typical"). "Known at cutoff" columns
+      are each model's actual pre-auction forecast; "actual" is the settled outcome,
+      known only afterward. When a tenor is selected, the same rule is re-run on only
+      that tenor's own auctions, so all three rows below always belong to the selected
+      tenor rather than being filtered out of a pooled selection.
+    </p>
+    <p class="table-scroll-hint" aria-hidden="true">&#8596; Swipe or scroll horizontally to view all columns.</p>
+    <div class="table-wrap">
+      <table id="case-studies-table"></table>
+    </div>
+    <p class="scope-note" id="scope-note-case-studies"></p>
+  </section>
+
+  <section class="panel not-shown-panel" aria-labelledby="not-shown-heading">
+    <h2 id="not-shown-heading">What this dashboard does <em>not</em> show</h2>
+    <ul>
+      <li><strong>Dealer balance-sheet stress.</strong> <code>primary_dealer_share</code> is an
+        allocation share at the moment of auction settlement, not a measure of dealer
+        capital, funding cost, inventory risk, or distress. High take-down can reflect
+        normal intermediation timing, not market stress.</li>
+      <li><strong>Causal inference.</strong> Every comparison here is a retrospective,
+        observational backtest over years (2015&ndash;2025, provisional 2026) already
+        examined during earlier project phases &mdash; not a fresh holdout, and not
+        evidence that any feature or model "causes" a given outcome.</li>
+      <li><strong>Trading returns.</strong> No Sharpe ratio, P&amp;L, or trading strategy is
+        computed or implied anywhere in this project. Forecast accuracy is evaluated
+        purely as a research question about auction mechanics.</li>
+      <li><strong>A validated stress detector.</strong> See the calibration warning above
+        &mdash; the classifier's probabilities are not reliable, regardless of its PR-AUC.</li>
+      <li><strong>Live or future data.</strong> This dashboard reads a static, generated
+        snapshot (<code>dashboard/data/phase8_dashboard_data.json</code>) of the accepted
+        Phase 7 backtest. It does not call any external API and will not update itself.</li>
+    </ul>
+  </section>
+
+  <footer class="page-footer">
+    <p id="footer-digest"></p>
+    <p>
+      Reproduce this page's data: <code>uv run python -m treasury_auction_stress.evaluation.phase8_cli</code>
+      then reload this page (served locally, see the load-error banner above for the
+      one-line preview command).
+    </p>
+    <p class="data-attribution">
+      Includes derived, aggregated figures based on data from the U.S. Department of the
+      Treasury (auctions, daily par yield curve), the U.S. Commodity Futures Trading
+      Commission (Traders in Financial Futures), and the Federal Reserve Bank of
+      Philadelphia (Real-Time Data Set for Macroeconomists) -- see
+      <code>docs/data_sources_and_licensing.md</code> for source terms as last checked.
+      &copy; 2026 Federal Reserve Bank of New York. Content from the New York Fed subject
+      to the Terms of Use at newyorkfed.org. This page's figures are aggregated,
+      transformed backtest statistics derived from that content, not a reproduction of it,
+      and are not endorsed by, and do not imply endorsement by, the Federal Reserve Bank
+      of New York or any other named source. This project's own code and documentation
+      are MIT-licensed (see <code>LICENSE</code>); the MIT License does not relicense or
+      grant any right to the third-party source data named above.
+    </p>
+  </footer>
+
+</main>
+
+<script src="app.js"></script>
+</body>
+</html>

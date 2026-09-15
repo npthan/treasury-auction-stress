@@ -1,0 +1,348 @@
+{
+  "source_name": "ny_fed_primary_dealer_statistics",
+  "raw_artifact_format_version": "1",
+  "series_list": null,
+  "series": [
+    {
+      "keyid": "PDPUSGCS36NOP",
+      "url": "https://markets.newyorkfed.org/api/pd/get/SBP2013/timeseries/PDPUSGCS36NOP.json",
+      "http_status": 200,
+      "retrieved_at_utc": "2026-09-11T04:00:00+00:00",
+      "body": {
+        "pd": {
+          "timeseries": [
+            {
+              "asofdate": "2013-02-06",
+              "keyid": "PDPUSGCS36NOP",
+              "value": "9482"
+            },
+            {
+              "asofdate": "2013-02-13",
+              "keyid": "PDPUSGCS36NOP",
+              "value": "16917"
+            },
+            {
+              "asofdate": "2013-02-20",
+              "keyid": "PDPUSGCS36NOP",
+              "value": "4539"
+            },
+            {
+              "asofdate": "2013-02-27",
+              "keyid": "PDPUSGCS36NOP",
+              "value": "16201"
+            },
+            {
+              "asofdate": "2013-03-06",
+              "keyid": "PDPUSGCS36NOP",
+              "value": "16684"
+            },
+            {
+              "asofdate": "2013-03-13",
+              "keyid": "PDPUSGCS36NOP",
+              "value": "16207"
+            },
+            {
+              "asofdate": "2013-03-20",
+              "keyid": "PDPUSGCS36NOP",
+              "value": "10811"
+            },
+            {
+              "asofdate": "2013-03-27",
+              "keyid": "PDPUSGCS36NOP",
+              "value": "18595"
+            }
+          ]
+        }
+      },
+      "period": "SBP2013"
+    },
+    {
+      "keyid": "PDPUSGCS3LNOP",
+      "url": "https://markets.newyorkfed.org/api/pd/get/SBP2013/timeseries/PDPUSGCS3LNOP.json",
+      "http_status": 200,
+      "retrieved_at_utc": "2026-09-11T04:00:00+00:00",
+      "body": {
+        "pd": {
+          "timeseries": [
+            {
+              "asofdate": "2013-02-06",
+              "keyid": "PDPUSGCS3LNOP",
+              "value": "52413"
+            },
+            {
+              "asofdate": "2013-02-13",
+              "keyid": "PDPUSGCS3LNOP",
+              "value": "51877"
+            },
+            {
+              "asofdate": "2013-02-20",
+              "keyid": "PDPUSGCS3LNOP",
+              "value": "50771"
+            },
+            {
+              "asofdate": "2013-02-27",
+              "keyid": "PDPUSGCS3LNOP",
+              "value": "36588"
+            },
+            {
+              "asofdate": "2013-03-06",
+              "keyid": "PDPUSGCS3LNOP",
+              "value": "33228"
+            },
+            {
+              "asofdate": "2013-03-13",
+              "keyid": "PDPUSGCS3LNOP",
+              "value": "49994"
+            },
+            {
+              "asofdate": "2013-03-20",
+              "keyid": "PDPUSGCS3LNOP",
+              "value": "43162"
+            },
+            {
+              "asofdate": "2013-03-27",
+              "keyid": "PDPUSGCS3LNOP",
+              "value": "57827"
+            }
+          ]
+        }
+      },
+      "period": "SBP2013"
+    },
+    {
+      "keyid": "PDPUSGCS611NOP",
+      "url": "https://markets.newyorkfed.org/api/pd/get/SBP2013/timeseries/PDPUSGCS611NOP.json",
+      "http_status": 200,
+      "retrieved_at_utc": "2026-09-11T04:00:00+00:00",
+      "body": {
+        "pd": {
+          "timeseries": [
+            {
+              "asofdate": "2013-02-06",
+              "keyid": "PDPUSGCS611NOP",
+              "value": "-47560"
+            },
+            {
+              "asofdate": "2013-02-13",
+              "keyid": "PDPUSGCS611NOP",
+              "value": "-40998"
+            },
+            {
+              "asofdate": "2013-02-20",
+              "keyid": "PDPUSGCS611NOP",
+              "value": "-41456"
+            },
+            {
+              "asofdate": "2013-02-27",
+              "keyid": "PDPUSGCS611NOP",
+              "value": "-30929"
+            },
+            {
+              "asofdate": "2013-03-06",
+              "keyid": "PDPUSGCS611NOP",
+              "value": "-32945"
+            },
+            {
+              "asofdate": "2013-03-13",
+              "keyid": "PDPUSGCS611NOP",
+              "value": "-32842"
+            },
+            {
+              "asofdate": "2013-03-20",
+              "keyid": "PDPUSGCS611NOP",
+              "value": "-36228"
+            },
+            {
+              "asofdate": "2013-03-27",
+              "keyid": "PDPUSGCS611NOP",
+              "value": "-41111"
+            }
+          ]
+        }
+      },
+      "period": "SBP2013"
+    },
+    {
+      "keyid": "PDPUSGCSM11NOP",
+      "url": "https://markets.newyorkfed.org/api/pd/get/SBP2013/timeseries/PDPUSGCSM11NOP.json",
+      "http_status": 200,
+      "retrieved_at_utc": "2026-09-11T04:00:00+00:00",
+      "body": {
+        "pd": {
+          "timeseries": [
+            {
+              "asofdate": "2013-02-06",
+              "keyid": "PDPUSGCSM11NOP",
+              "value": "9054"
+            },
+            {
+              "asofdate": "2013-02-13",
+              "keyid": "PDPUSGCSM11NOP",
+              "value": "6102"
+            },
+            {
+              "asofdate": "2013-02-20",
+              "keyid": "PDPUSGCSM11NOP",
+              "value": "10201"
+            },
+            {
+              "asofdate": "2013-02-27",
+              "keyid": "PDPUSGCSM11NOP",
+              "value": "10820"
+            },
+            {
+              "asofdate": "2013-03-06",
+              "keyid": "PDPUSGCSM11NOP",
+              "value": "9000"
+            },
+            {
+              "asofdate": "2013-03-13",
+              "keyid": "PDPUSGCSM11NOP",
+              "value": "8601"
+            },
+            {
+              "asofdate": "2013-03-20",
+              "keyid": "PDPUSGCSM11NOP",
+              "value": "13874"
+            },
+            {
+              "asofdate": "2013-03-27",
+              "keyid": "PDPUSGCSM11NOP",
+              "value": "13583"
+            }
+          ]
+        }
+      },
+      "period": "SBP2013"
+    },
+    {
+      "keyid": "PDPUSGTBNOP",
+      "url": "https://markets.newyorkfed.org/api/pd/get/SBP2013/timeseries/PDPUSGTBNOP.json",
+      "http_status": 200,
+      "retrieved_at_utc": "2026-09-11T04:00:00+00:00",
+      "body": {
+        "pd": {
+          "timeseries": [
+            {
+              "asofdate": "2013-02-06",
+              "keyid": "PDPUSGTBNOP",
+              "value": "26659"
+            },
+            {
+              "asofdate": "2013-02-13",
+              "keyid": "PDPUSGTBNOP",
+              "value": "43196"
+            },
+            {
+              "asofdate": "2013-02-20",
+              "keyid": "PDPUSGTBNOP",
+              "value": "47333"
+            },
+            {
+              "asofdate": "2013-02-27",
+              "keyid": "PDPUSGTBNOP",
+              "value": "33048"
+            },
+            {
+              "asofdate": "2013-03-06",
+              "keyid": "PDPUSGTBNOP",
+              "value": "54744"
+            },
+            {
+              "asofdate": "2013-03-13",
+              "keyid": "PDPUSGTBNOP",
+              "value": "39593"
+            },
+            {
+              "asofdate": "2013-03-20",
+              "keyid": "PDPUSGTBNOP",
+              "value": "33143"
+            },
+            {
+              "asofdate": "2013-03-27",
+              "keyid": "PDPUSGTBNOP",
+              "value": "26770"
+            }
+          ]
+        }
+      },
+      "period": "SBP2013"
+    },
+    {
+      "keyid": "PDPOSGS-B",
+      "url": "https://markets.newyorkfed.org/api/pd/get/PDPOSGS-B.json",
+      "http_status": 200,
+      "retrieved_at_utc": "2026-09-11T04:00:00+00:00",
+      "body": {
+        "pd": {
+          "timeseries": [
+            {
+              "asofdate": "2013-04-03",
+              "keyid": "PDPOSGS-B",
+              "value": "46324"
+            },
+            {
+              "asofdate": "2013-04-10",
+              "keyid": "PDPOSGS-B",
+              "value": "53585"
+            },
+            {
+              "asofdate": "2013-04-17",
+              "keyid": "PDPOSGS-B",
+              "value": "42765"
+            },
+            {
+              "asofdate": "2013-04-24",
+              "keyid": "PDPOSGS-B",
+              "value": "51711"
+            },
+            {
+              "asofdate": "2013-05-01",
+              "keyid": "PDPOSGS-B",
+              "value": "45610"
+            }
+          ]
+        }
+      },
+      "period": null
+    },
+    {
+      "keyid": "PDPOSGSC-G3L6",
+      "url": "https://markets.newyorkfed.org/api/pd/get/PDPOSGSC-G3L6.json",
+      "http_status": 200,
+      "retrieved_at_utc": "2026-09-11T04:00:00+00:00",
+      "body": {
+        "pd": {
+          "timeseries": [
+            {
+              "asofdate": "2013-04-03",
+              "keyid": "PDPOSGSC-G3L6",
+              "value": "17069"
+            },
+            {
+              "asofdate": "2013-04-10",
+              "keyid": "PDPOSGSC-G3L6",
+              "value": "28309"
+            },
+            {
+              "asofdate": "2013-04-17",
+              "keyid": "PDPOSGSC-G3L6",
+              "value": "15744"
+            },
+            {
+              "asofdate": "2013-04-24",
+              "keyid": "PDPOSGSC-G3L6",
+              "value": "27240"
+            },
+            {
+              "asofdate": "2013-05-01",
+              "keyid": "PDPOSGSC-G3L6",
+              "value": "20418"
+            }
+          ]
+        }
+      },
+      "period": null
+    }
+  ]
+}

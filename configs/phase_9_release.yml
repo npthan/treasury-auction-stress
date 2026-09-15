@@ -1,0 +1,242 @@
+# Phase 9 public-release audit criteria — FROZEN before any Phase 9
+# correction was made. Do not edit the pass/fail criteria below to make
+# a later verdict pass; if a criterion turns out to be wrong, record
+# that explicitly in the Phase 9 release audit instead of
+# silently editing it here.
+#
+# Baseline established at the start of Phase 9:
+#   branch: main
+#   head_commit: 222cee3  # "Complete Phase 8 interpretation, dashboard, and research report"
+#   working_tree: clean
+#   git_remote: none configured
+#   phase_8_status: ACCEPTED (the Phase 8 acceptance review)
+#   frozen_at_utc: "2026-09-15T02:52:19Z"
+
+meta:
+  phase: 9
+  purpose: >
+    Prepare (but not execute) public-GitHub-repository readiness:
+    secret/PII audit of current tree and full git history, data
+    provenance/redistribution/licensing review, clean-room
+    reproducibility verification, and minimal recruiter-facing polish.
+    Phase 9 never stages, commits, pushes, or publishes anything, and
+    never changes an accepted Phase 0-8 result.
+  out_of_scope:
+    - new modeling research, tuning, or retraining
+    - adding FRED/ALFRED or any new data source
+    - requiring an API key for offline tests or dashboard use
+    - downloading new bulk datasets
+    - exposing gitignored local data
+    - installing scanning software without explicit permission
+    - choosing a software license on the user's behalf
+    - fake GitHub URLs or CI badges
+    - rewriting git history
+    - git add / git commit / git push / any destructive git command
+
+baseline_accepted_artifact_checksums:
+  # sha256, recorded once at Phase 9 start; re-verified unchanged at
+  # Phase 9 close. Source of truth for "no Phase 6/7 result changed."
+  source_file: /tmp/phase9_baseline_checksums.txt
+  algorithm: sha256
+  covers:
+    - data/processed/phase_7_point_predictions.parquet
+    - data/processed/phase_7_probabilistic_predictions.parquet
+    - data/processed/phase_7_classifier_predictions.parquet
+    - data/processed/phase_7_point_metrics_pooled.parquet
+    - data/processed/phase_7_point_metrics_by_year.parquet
+    - data/processed/phase_7_point_metrics_by_tenor.parquet
+    - data/processed/phase_7_point_metrics_provisional.parquet
+    - data/processed/phase_7_probabilistic_metrics_pooled.parquet
+    - the Phase 8 research summary (historical; its results now live in README.md)
+    - the generated Phase 8 interpretation report (historical; regenerable
+      into the untracked artifacts/ directory)
+    - the Phase 8 acceptance review (historical)
+    - dashboard/data/phase8_dashboard_data.json
+
+phase_9a_tree_and_history_audit:
+  current_tree_checks:
+    - id: no_secret_patterns
+      description: >
+        No API key, password, bearer/OAuth token, cookie, private key,
+        connection string, or auth header value in any tracked file.
+      method: repository-native regex/entropy checks; an already-installed
+        scanner may supplement but is not installed by this phase.
+    - id: no_fred_credential
+      description: no FRED_API_KEY or api.stlouisfed.org reference outside
+        docs/data_source_governance.md and configs/sources.yml's disclosed
+        exclusion entry.
+    - id: no_env_files
+      description: no .env / .env.* tracked (allow a sanitized .env.example
+        only if one is deliberately added).
+    - id: no_identifying_info
+      description: no personal email/phone/address, machine hostname, IP,
+        or absolute /Users/... path in tracked files other than the
+        project author line already in pyproject.toml (a disclosed,
+        pre-existing, non-Phase-9 fact, not newly introduced).
+    - id: no_bulk_data_tracked
+      description: no raw/interim/processed dataset tracked outside the
+        .gitkeep placeholders and tests/fixtures/.
+    - id: no_unexpected_binaries
+      description: no parquet/db/archive/model-binary/cache/venv/checkpoint/
+        OS-metadata file tracked.
+    - id: dashboard_json_safe
+      description: dashboard/data/phase8_dashboard_data.json contains only
+        aggregate/backtest figures — no secret, no local path, no raw row
+        data, no unnecessary PII.
+  history_checks:
+    - id: history_no_secret
+      description: no reachable commit (git log --all) introduces then
+        removes a secret/credential/private key.
+    - id: history_no_bulk_data
+      description: no reachable commit adds a raw/interim/processed dataset
+        later deleted (still recoverable from history).
+    - id: history_large_objects
+      description: inventory the largest reachable git objects (git
+        rev-list + cat-file/git verify-pack or `git count-objects`) with
+        path and commit; report only, no gc/prune/rewrite.
+  gitignore_coverage_required:
+    - .env, .env.*
+    - .venv/ and other virtualenvs
+    - __pycache__/, .pytest_cache/, .ruff_cache/, build/dist output
+    - .ipynb_checkpoints/
+    - data/raw/*, data/interim/*, data/processed/* (placeholders excepted)
+    - .DS_Store and other OS metadata
+    - local logs, temp files, downloaded workbooks, credential files
+  pass_condition: >
+    every current_tree_checks and history_checks item is either verified
+    true, or any finding is disclosed with file/commit/category (never a
+    printed secret value) and a required remediation, and public-release
+    prep for that finding is halted per the top-level instructions.
+
+phase_9b_provenance_and_licensing:
+  sources_to_document:
+    - treasury_fiscal_data_auctions
+    - ny_fed_primary_dealer_statistics
+    - treasury_daily_par_yield_curve
+    - cftc_tff_futures_only
+    - philadelphia_fed_rtdsm
+  per_source_fields:
+    - official publisher and canonical source page (current official docs only)
+    - what this repo downloads/derives
+    - whether raw data is committed (expected: no)
+    - fixture provenance (real/modified/synthetic)
+    - attribution requirements
+    - redistribution/usage restrictions
+    - suitability of committed dashboard aggregates / report excerpts for
+      public distribution
+    - date official terms were checked (this phase)
+    - open uncertainty requiring human/legal review
+  dependency_license_review:
+    method: installed package metadata (uv/pip show, importlib.metadata)
+      cross-checked against each project's own declared license.
+    flag: missing, ambiguous, incompatible-with-intended-MIT, or
+      noncommercial-only licenses.
+  project_license_decision: >
+    Not chosen by Phase 9. Recorded as an open user decision; MIT
+    recommended for a portfolio project, with a brief explanation that no
+    license means default all-rights-reserved. No LICENSE/CITATION.cff
+    file created until the user approves wording and legal name.
+  pass_condition: >
+    every listed source has a documented-vs-interpreted-terms table entry;
+    no third-party mirror described as official; no legal certainty claimed.
+
+phase_9c_reproducibility:
+  method: fresh temporary clone/archive of the accepted Phase 8 commit,
+    outside the working repository, under a narrowly-scoped temp dir.
+  checks:
+    - python 3.12 / requires-python constraint holds
+    - uv sync --locked (or documented locked setup) succeeds, disclosing
+      whether this ran against a warm or empty dependency cache
+    - offline test suite passes with no network/credential
+    - ruff passes
+    - dashboard serves from repo root; /dashboard/, the dashboard JSON,
+      and both Phase 8 report links return HTTP 200
+    - dashboard requires no raw/processed local dataset
+    - live-network tests are opt-in only (excluded from default run)
+    - Phase 8 generated artifacts are byte-identical across two
+      consecutive runs given unchanged accepted inputs
+    - accepted Phase 7 parquet checksums unchanged after any Phase 8
+      regeneration performed during this check
+    - documented commands work copy-pasted verbatim into a clean shell
+  pass_condition: every check above is genuinely run (not assumed) and
+    passes, or a failure/limitation is disclosed verbatim.
+
+phase_9d_polish:
+  readme_required_sections:
+    - precise research question
+    - honest concise result
+    - dealer-share-is-a-proxy / retrospective / poorly-calibrated-classifier
+      / no-trading-strategy warnings
+    - Python 3.12 + uv quick start
+    - offline test + ruff commands
+    - dashboard preview instructions (repo-root topology)
+    - "links -- research report, interpretation report, point-in-time
+      methodology, data licensing doc, reproducibility doc"
+    - compact architecture/layout section
+    - committed-public-aggregates vs ignored-bulk-data distinction
+    - current, non-stale phase status
+  forbidden:
+    - local machine paths, stale dates, internal planning language,
+      session references, contradictory phase-status claims
+    - decorative badges referencing nonexistent CI runs or repo URLs
+  ci_workflow_if_added:
+    - python 3.12
+    - installs from the locked dependency spec
+    - runs ruff + default offline tests only (live_network excluded)
+    - least-privilege permissions (e.g. contents: read)
+    - no secret values or required repository secrets
+    - only current, version-pinned, official actions
+    - covered by a static configuration test where practical
+    - never downloads/regenerates bulk source data
+
+phase_9e_deliverables:
+  files:
+    - the Phase 9 release audit (18-point structure, final verdict)
+    - public-release manifest (allowlist / denylist by path category)
+    - docs/data_sources_and_licensing.md
+    - docs/reproducibility.md
+    - adversarial audit tests (synthetic-only credentials, never real)
+  verdict_values:
+    - "READY FOR PHASE 9 ACCEPTANCE REVIEW"  # only if the sole remaining
+      # item is an explicitly-identified user decision (e.g. license choice)
+    - "BLOCKED"  # any secret, sensitive history object, redistribution
+      # problem, failed clean-room test, or other material risk remains
+
+# ============================================================
+# ADDENDUM -- Phase 9 acceptance review and remediation (independent
+# session, after this file above was frozen). Per this file's own rule
+# ("do not edit the pass/fail criteria... to make a later verdict
+# pass"), nothing above this line was edited. This addendum records
+# what the acceptance review found the frozen criteria got wrong or
+# left incomplete, and the additional criteria a user-directed
+# remediation pass introduced. See the Phase 9 acceptance review
+# for the full account; this is a pointer, not a duplicate.
+# ============================================================
+phase_9_addendum_acceptance_review:
+  what_the_frozen_9a_criteria_missed: >
+    phase_9a_tree_and_history_audit's history_checks never actually
+    enumerated every reachable blob's own content -- only current-tree
+    scans, diff-filter=D deleted-file checks, and a largest-objects
+    inventory. This missed a file modified-in-place (never deleted)
+    that still carried a real local home path in every commit including
+    HEAD. Fixed: src/treasury_auction_stress/governance/history_audit.py.
+  additional_verdict_value_introduced:
+    - "REMEDIATION COMPLETE -- ELIGIBLE FOR SEPARATE SANITIZED
+      PUBLIC-SNAPSHOT CREATION"  # only if every current-tree and
+      # sanitized-export check passes; the ORIGINAL git history remains
+      # permanently excluded from public release regardless -- this
+      # value does NOT mean the existing repository/history is
+      # release-ready, only that a FUTURE fresh public snapshot built
+      # from the sanitized current tree is eligible to be created and
+      # separately audited.
+  user_decisions_applied_this_pass:
+    - public_history_strategy: fresh sanitized snapshot later; existing
+        9-commit history never rewritten, never published
+    - public_identity: name "Nathan Yang" retained; email removed from
+        pyproject.toml and all publishable content, no fabricated
+        replacement, no noreply address configured yet
+    - project_license: MIT, copyright (c) 2026 Nathan Yang; LICENSE
+        created; third-party-data non-relicensing scope documented
+    - rtdsm_fixtures: real .xlsx fixtures removed, replaced with
+        deterministic synthetic fixtures; genuine-fact tests moved to
+        opt-in live_network tests

@@ -1,0 +1,173 @@
+# Explicit, human-reviewed allowlist for the Phase 9 release-governance
+# CURRENT-TREE audit (src/treasury_auction_stress/governance/audit_cli.py).
+#
+# Every entry below is one specific reviewer decision that one specific
+# matched VALUE (identified only by its non-reversible fingerprint, never
+# its own content) is not sensitive AT the exact repo-relative path(s)
+# listed in its `paths:` field -- never a blanket exemption by category
+# or directory, and never a value-anywhere exemption: the same value
+# appearing at any path not listed here still fails the audit. Adding an entry is equivalent to a manual code-review
+# sign-off: only add one after personally confirming the underlying
+# value is synthetic, a deliberately-fake test canary, or benign prose,
+# never because a value is merely "probably fine" or inconvenient.
+#
+# This file is loaded ONLY by audit_cli.py's current-tree scan. It is
+# NEVER applied to the full-history audit (history_audit.py) -- a
+# finding in this project's actual git history is never suppressed,
+# by design; see the Phase 9 acceptance review.
+#
+# Every fingerprint below was verified, during the Phase 9 acceptance
+# review, to come from one of exactly two sources:
+#   1. This project's OWN test suite, which deliberately contains
+#      synthetic, unmistakably-fake credential- and PII-shaped strings
+#      specifically so the governance scanner's own tests can assert it
+#      catches them (see tests/test_release_audit.py,
+#      tests/test_history_audit.py, tests/test_audit_cli.py). A
+#      regex-based scanner cannot distinguish a fake secret used to
+#      test the scanner from a real one by shape alone -- that
+#      distinction is exactly what this human-reviewed allowlist
+#      records.
+#   2. Documentation prose that describes, in the abstract, the kind of
+#      per-user filesystem path this scanner's home-path pattern looks
+#      for, without stating an actual local path.
+#
+# NOTE ON THIS FILE'S OWN WORDING: several of the reason texts below
+# deliberately avoid reproducing the literal trigger-shaped substrings
+# they describe (e.g. a key name immediately followed by "=" or ":",
+# or a quoted "category:subcategory"-shaped finding-category string) --
+# doing so verbatim would make this documentation file itself match the
+# very patterns it is explaining, which happened during drafting and was
+# corrected. Describe, don't reproduce.
+#
+# Adding a NEW test with a NEW fake secret/PII value will require a NEW
+# reviewed entry here (or the current-tree audit will correctly fail on
+# it) -- this is intentional friction, not a bug.
+
+allowed_fingerprints:
+  # -- Documentation prose describing the home-path pattern in the abstract --
+  - fingerprint: "fp:d2b16d127ee2"
+    paths:
+      - "configs/phase_9_release.yml"
+      - "tests/test_history_audit.py"
+      - "tests/test_release_audit.py"
+    file: "configs/phase_9_release.yml (and the same recurring phrase in the governance test files)"
+    reason: >
+      Prose describing, abstractly, what the absolute-home-path pattern
+      looks for (a per-user filesystem path under a Users or home
+      directory), using a trailing ellipsis as a generic placeholder --
+      not a statement of any actual local path. The same phrase recurs
+      verbatim in a few Phase 9 documents, hence one shared fingerprint.
+
+  # -- tests/test_release_audit.py: synthetic secret-pattern fixtures --
+  - fingerprint: "fp:dc10364dd89c"
+    paths:
+      - "tests/test_release_audit.py"
+    file: "tests/test_release_audit.py (FAKE_ENV_FILE constant)"
+    reason: "A deliberately-fake FRED API key environment-variable-style test fixture line, matched by the key/value-assignment pattern."
+  - fingerprint: "fp:1c87cd47310d"
+    paths:
+      - "tests/test_release_audit.py"
+    file: "tests/test_release_audit.py (FAKE_ENV_FILE constant)"
+    reason: "Same fake FRED API key fixture line as above, matched a second time by the project's own FRED-key-specific pattern."
+  - fingerprint: "fp:7dd89351b159"
+    paths:
+      - "tests/test_release_audit.py"
+    file: "tests/test_release_audit.py (FAKE_ENV_FILE constant)"
+    reason: "A deliberately-fake database-password test fixture value (literal placeholder text, not a real credential)."
+  - fingerprint: "fp:228e2fa94b1e"
+    paths:
+      - "tests/test_release_audit.py"
+    file: "tests/test_release_audit.py (FAKE_AWS_KEY constant)"
+    reason: "A deliberately-fake AWS-access-key-shaped test canary containing repeated literal FAKE substrings, not a working credential."
+  - fingerprint: "fp:9b207212991f"
+    paths:
+      - "tests/test_release_audit.py"
+    file: "tests/test_release_audit.py (FAKE_HISTORICAL_FIXTURE_TEXT constant)"
+    reason: "A deliberately-fake API-key-style test fixture value with a literal FAKE substring embedded in it."
+  - fingerprint: "fp:86d774f305d9"
+    paths:
+      - "tests/test_release_audit.py"
+    file: "tests/test_release_audit.py"
+    reason: >
+      Self-referential false positive: one of this file's own test
+      assertions names a finding category whose name happens to be
+      shaped like a key/value-assignment match (a word describing
+      "secret," a separator, then a multi-character category suffix).
+  - fingerprint: "fp:3ea8d31e1b84"
+    paths:
+      - "tests/test_release_audit.py"
+    file: "tests/test_release_audit.py"
+    reason: "Self-referential false positive, same mechanism as the entry immediately above, for a different category name string used in another assertion."
+  - fingerprint: "fp:1a29ef13f2a6"
+    paths:
+      - "tests/test_release_audit.py"
+    file: "tests/test_release_audit.py (test_absolute_home_path_and_dev_session_url_are_flagged)"
+    reason: "A deliberately-fake example filesystem path using the placeholder username 'exampleuser' -- a canary test fixture, not a real local path."
+  - fingerprint: "fp:a5b8c209a2bb"
+    paths:
+      - "tests/test_release_audit.py"
+    file: "tests/test_release_audit.py (FAKE_SESSION_URL_LINE, used by the session-URL detection and path-scoping tests)"
+    reason: "A deliberately-fake development-tool session-URL-shaped test fixture built on the reserved example.invalid test domain and sequential hex digits, not a real session URL."
+  - fingerprint: "fp:334b915e46a5"
+    paths:
+      - "tests/test_release_audit.py"
+    file: "tests/test_release_audit.py (test_fingerprint_is_deterministic_and_never_reveals_the_value)"
+    reason: "A synthetic placeholder email address used only to prove two different values fingerprint differently."
+  - fingerprint: "fp:e3cf095eff7a"
+    paths:
+      - "tests/test_release_audit.py"
+    file: "tests/test_release_audit.py (test_explicit_fingerprint_allowlist_can_permit_one_specific_value)"
+    reason: "A synthetic placeholder email address used only to prove an allowlist entry doesn't leak to an unrelated value."
+  - fingerprint: "fp:0435be1a2fc2"
+    paths:
+      - "tests/test_release_audit.py"
+    file: "tests/test_release_audit.py (test_a_private_email_reintroduced_into_pyproject_toml_would_fail_the_audit)"
+    reason: >
+      A synthetic placeholder email address used only to prove a
+      reintroduced email in pyproject.toml fails the audit -- this
+      allowlist entry does not affect that unit test itself, since the
+      unit test calls the audit function directly with no allowlist.
+
+  # -- tests/test_history_audit.py: synthetic canaries --
+  - fingerprint: "fp:1280f0ad44fb"
+    paths:
+      - "tests/test_history_audit.py"
+      - "tests/test_release_audit.py"
+    file: "tests/test_history_audit.py"
+    reason: >
+      Self-referential false positive: a finding-category name string
+      used repeatedly in this file's own assertions is itself shaped
+      like a key/value-assignment match, the same mechanism as the two
+      test_release_audit.py entries above.
+  - fingerprint: "fp:3e5f19c263bb"
+    paths:
+      - "tests/test_history_audit.py"
+      - "tests/test_release_audit.py"
+    file: "tests/test_history_audit.py (CANARY_HOME_PATH constant)"
+    reason: "A deliberately-fake example local path using a placeholder username that spells out it is not a real one -- a canary test fixture."
+
+  # -- tests/test_audit_cli.py: synthetic canaries --
+  - fingerprint: "fp:d76ac749c02b"
+    paths:
+      - "tests/test_audit_cli.py"
+      - "tests/test_history_audit.py"
+    file: "tests/test_audit_cli.py (CANARY_SECRET constant)"
+    reason: "A deliberately-fake AWS-access-key-shaped test canary with a literal CANARY substring in it."
+  - fingerprint: "fp:6444ef0836e8"
+    paths:
+      - "tests/test_audit_cli.py"
+      - "tests/test_history_audit.py"
+    file: "tests/test_audit_cli.py (CANARY_SECRET constant)"
+    reason: "Same fake canary secret as above, matched a second time by the key/value-assignment pattern."
+  - fingerprint: "fp:bfbda83ac82e"
+    paths:
+      - "tests/test_audit_cli.py"
+      - "tests/test_release_audit.py"
+    file: "tests/test_audit_cli.py (CANARY_EMAIL constant)"
+    reason: "A deliberately-fake, unmistakable canary email address containing literal words spelling out that it is not a real person."
+  - fingerprint: "fp:dc582314dadc"
+    paths:
+      - "tests/test_audit_cli.py"
+      - "tests/test_history_audit.py"
+    file: "tests/test_audit_cli.py (synthetic git repo fixture helper)"
+    reason: "The throwaway synthetic git repos this test builds under a temp directory are configured with the standard reserved test placeholder email domain, never a real one."

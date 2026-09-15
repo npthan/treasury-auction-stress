@@ -1,0 +1,367 @@
+# Source registry.
+#
+# This file is the single place that records, for every external data
+# source this project might use: where it comes from, how it is timed,
+# what credentials it needs, and whether it is currently authorized to
+# be ingested. A source with `authorized_in_current_phase: false` must
+# NOT be called by any pipeline code, regardless of how convenient it
+# would be.
+#
+# Fields marked "provisional" below (Phase 0) are best-effort
+# descriptions written before the live API/schema was inspected. Phase
+# 1 verifies and corrects the treasury_fiscal_data_auctions entry
+# against the actual API documentation and data dictionary; other
+# entries remain provisional until their own phase arrives.
+
+sources:
+  treasury_fiscal_data_auctions:
+    display_name: "U.S. Treasury Fiscal Data — Treasury Securities Auctions"
+    official_url: "https://fiscaldata.treasury.gov/datasets/treasury-securities-auctions-data/"
+    documentation_url: "https://fiscaldata.treasury.gov/api-documentation/"
+    api_base_url: "https://api.fiscaldata.treasury.gov/services/api/fiscal_service"  # verified live 2026-09-10
+    endpoint: "/v1/accounting/od/auctions_query"  # verified live 2026-09-10
+    max_page_size: 10000  # verified: page[size]=10001 returns HTTP 400
+    expected_data_frequency: "one record per completed or scheduled auction (irregular calendar, roughly weekly to monthly depending on tenor)"
+    expected_observation_timing: "each record observes a single Treasury auction, keyed by its auction_date"
+    expected_publication_timing: >
+      auction-result fields (total_accepted, bid_to_cover_ratio, dealer/
+      direct/indirect allotments, etc.) populate once the auction
+      settles; a record for an auction scheduled today or in the near
+      future carries the announcement-side fields with result fields
+      still the literal string "null" until settlement. See
+      docs/data_dictionary.md for verification details.
+    announcement_date_field_notes: >
+      announcemt_date (the API's own spelling) is a calendar date only
+      (format YYYY-MM-DD, no time component) and has no verified,
+      standard intraday release time. Checked against 31 CFR 356.10
+      (Uniform Offering Circular, verified via the official GovInfo.gov
+      CFR edition -- see docs/data_dictionary.md for the exact
+      citation) and real TreasuryDirect press
+      releases sampled 2018-2026, which show non-standardized embargo
+      times (08:30/10:30/11:00 A.M. Eastern observed). Do not treat
+      this field as an exact timestamp; see the "Announcement date
+      timing" section of docs/data_dictionary.md and the
+      date-level conservative rule in docs/point_in_time_rules.md.
+    retrieval_metadata_requirements:
+      - request_url
+      - query_parameters
+      - retrieval_timestamp_utc
+      - http_status
+      - response_format
+      - row_count
+      - dataset_date_range
+      - checksum_sha256
+      - schema_or_code_version
+    credential_requirements: "none (public API, verified: no auth required)"
+    authorized_in_current_phase: true
+    notes: >
+      Primary and, for Phase 1, only data source. Do not substitute an
+      unofficial aggregator even if it appears more convenient. See
+      docs/data_dictionary.md for verified endpoint behavior,
+      including two quirks discovered during Phase 1: the fields=
+      query parameter causes server-side de-duplication rather than
+      column projection (never use it), and missing values are the
+      literal JSON string "null", not a JSON null.
+
+  ny_fed_primary_dealer_statistics:
+    display_name: "Federal Reserve Bank of New York — Primary Dealer Statistics"
+    official_url: "https://www.newyorkfed.org/markets/counterparties/primary-dealers-statistics"
+    documentation_url: "https://www.federalreserve.gov/apps/reportingforms/Report/Index/FR_2004"
+    api_base_url: "https://markets.newyorkfed.org/api/pd"  # verified live 2026-09-10/11
+    endpoint: "/get/{keyid}.json (data), /list/timeseries.json (schema-drift check)"
+    expected_data_frequency: "weekly (FR 2004A/B/C: positions/transactions/financing+fails as of Wednesday close)"
+    expected_observation_timing: >
+      each observation is a Wednesday close-of-business report ("asofdate");
+      verified empirically: every selected series' asofdate is a Wednesday,
+      exactly 7 calendar days apart, zero gaps, 2013-04-03 through the
+      latest release as of this session.
+    expected_publication_timing: >
+      NY Fed's own stated cadence: "Data are updated on Thursdays at
+      approximately 4:15 p.m. with the previous week's statistics."
+      This project computes a conservative publication_date (Wednesday
+      asofdate + 1 day, advanced past a U.S. federal holiday) and a
+      publication_safe_available_date (+1 further day, to resolve
+      same-day intraday-timing ambiguity) -- see
+      docs/point_in_time_rules.md and
+      artifacts/primary_dealer_data_quality.md. Never joined by
+      observation date alone.
+    units: "millions of dollars; market value for FR 2004A positions, principal (or fair) value for FR 2004B/C transactions/financing/fails"
+    missing_value_token: >
+      the literal string "*" -- verified live, distinct from the
+      Fiscal Data auctions API's "null" string convention.
+    historical_coverage_notes: >
+      This project's selected keyids begin 2013-04-03 (a real coverage
+      gap for auctions 2010-01-01 through 2013-04-02). The 11-21y and
+      >21y Treasury coupon position buckets (PDPOSGSC-G11L21,
+      PDPOSGSC-G21) only exist from 2022-01-05. FR 2004C's repo/
+      reverse-repo counterparty segmentation was revised 2022-01-05
+      (Federal Reserve FEDS Note, 2022-08-05) -- the published totals
+      this project uses remain one continuous keyid across that date,
+      but the underlying methodology changed. See
+      artifacts/primary_dealer_data_quality.md for the full verification.
+    retrieval_metadata_requirements:
+      - request_url
+      - query_parameters
+      - retrieval_timestamp_utc
+      - http_status
+      - response_format
+      - row_count
+      - dataset_date_range
+      - checksum_sha256
+      - schema_or_code_version
+    credential_requirements: "none (public API, verified: no auth required)"
+    authorized_in_current_phase: true
+    notes: >
+      Phase 3 series set: treasury_auction_stress.data.dealer_stats_schema.
+      SELECTED_SERIES (16 hand-picked Treasury-excl.-TIPS series: net
+      position by maturity bucket, aggregate transaction volume, repo,
+      reverse repo, securities borrowed, securities lent, fails to
+      deliver, fails to receive). One likely-mislabeled series
+      (PDTRGST-TOT) was investigated and deliberately excluded -- see
+      the dealer_stats_schema.py module docstring. TIPS and FRN series
+      exist in the API but are out of scope, matching this project's
+      nominal-coupon-only universe.
+
+  treasury_daily_par_yield_curve:
+    display_name: "U.S. Department of the Treasury — Daily Treasury Par Yield Curve Rates"
+    source_owner: "U.S. Department of the Treasury"
+    official_url: "https://home.treasury.gov/resource-center/data-chart-center/interest-rates/TextView?type=daily_treasury_yield_curve"
+    official_landing_page: "https://home.treasury.gov/resource-center/data-chart-center/interest-rates/TextView?type=daily_treasury_yield_curve"
+    documentation_url: "https://home.treasury.gov/policy-issues/financing-the-government/interest-rate-statistics/treasury-yield-curve-methodology"
+    terms_or_usage_policy_url: "https://home.treasury.gov/subfooter/site-policies-and-notices"  # corrected Phase 9 (2026-09-14): the previously recorded URL now 404s
+    terms_reviewed_date: "2026-09-14"
+    api_base_url: null
+    endpoint: "https://home.treasury.gov/resource-center/data-chart-center/interest-rates/daily-treasury-rates.csv/{year}/all?type=daily_treasury_yield_curve&field_tdr_date_value={year}&page&_format=csv"
+    permitted_project_use: "public U.S. government data; used here as leakage-safe candidate rate features for pre-auction forecasting research (non-commercial academic/research use)"
+    attribution_requirement: "cite 'U.S. Department of the Treasury' as the source; no specific attribution template mandated"
+    expected_data_frequency: "daily (U.S. Treasury market trading days only)"
+    expected_observation_timing: "par yield curve inputs collected 'at or near 3:30 PM' Eastern each trading day (Treasury's own methodology page)"
+    expected_publication_timing: >
+      Treasury's own page: rates 'usually available... by 6:00 PM Eastern Time each
+      trading day,' with a stated possible delay. No exact historical intraday
+      timestamp is available; this project uses a conservative date-level rule
+      (publication_safe_available_date = rate_date + 1 calendar day). See
+      docs/point_in_time_rules.md and artifacts/treasury_rates_data_quality.md.
+    timezone: "America/New_York (Eastern), per Treasury's own methodology page"
+    schema: "one CSV row per trading day; one column per currently-reported maturity (verified to evolve over time -- see treasury_rates_schema.py)"
+    units: "percent (par yield, e.g. 4.35 meaning 4.35%)"
+    missing_value_convention: "empty string for a maturity not quoted that day (verified: e.g. 30 Yr during the 2002-2006 issuance suspension)"
+    revision_behavior: >
+      Not provably final. This project can only observe the current official
+      historical snapshot at each retrieval; it cannot reconstruct what an
+      earlier download would have shown unless it holds an earlier immutable
+      raw artifact. Two immutable raw snapshots of 2026 retrieved 1 day apart
+      (2026-09-11 and 2026-09-12, Phase 4 acceptance review) were compared
+      directly: identical row count and zero changed values across all 175
+      common rows -- a real, checked fact for that specific window, not a
+      general claim that Treasury never revises published historical rates.
+      Every future download's checksum is compared against prior artifacts
+      so any future divergence would be detected prospectively.
+    historical_coverage: "this project ingests 2009-01-01 onward (verified live data exists back to at least 1990); see treasury_rates_schema.py for the full verified column-evolution table"
+    known_breaks: >
+      Whole-curve spline methodology changed 2021-12-06 (quasi-cubic Hermite ->
+      monotone convex, pre-change rates remain official per Treasury's own page);
+      20-Year point construction changed 2020-05-20 (composite of off-the-run
+      bonds -> the real reintroduced 20-Year bond); 4-month column added
+      2022-10-19; 1.5-month column added 2025-02-18.
+    point_in_time_availability_rule: "date-level; publication_safe_available_date = rate_date + 1 calendar day (see docs/point_in_time_rules.md)"
+    retrieval_metadata_requirements:
+      - request_url
+      - retrieval_timestamp_utc
+      - http_status
+      - content_type
+      - row_count
+      - dataset_date_range
+      - checksum_sha256
+      - schema_or_code_version
+    credential_requirements: "none (public CSV export, verified: no auth required)"
+    authorized_in_current_phase: true
+    notes: >
+      Phase 4A. Obtained directly from Treasury's own CSV export -- NOT via
+      FRED/ALFRED (see docs/data_source_governance.md for why FRED is excluded
+      this phase). All 7 nominal-coupon tenors (2/3/5/7/10/20/30-Year) verified
+      present and non-empty throughout this project's 2009+ ingestion window.
+
+  cftc_tff_futures_only:
+    display_name: "CFTC Traders in Financial Futures (TFF) — Futures Only"
+    source_owner: "U.S. Commodity Futures Trading Commission"
+    official_url: "https://www.cftc.gov/MarketReports/CommitmentsofTraders/index.htm"
+    official_landing_page: "https://www.cftc.gov/MarketReports/CommitmentsofTraders/index.htm"
+    documentation_url: "https://www.cftc.gov/MarketReports/CommitmentsofTraders/ExplanatoryNotes/index.htm"
+    terms_or_usage_policy_url: "https://www.cftc.gov/WebPolicy/index.htm"  # corrected Phase 9 (2026-09-14): the previously recorded URL now 404s; this page states CFTC data is public domain and freely redistributable, with attribution requested but not mandatory (docs/data_sources_and_licensing.md quotes it in full; portal.cftc.gov/TermsOfUseAgreement carries the same language and also resolves, but this is the canonical cftc.gov page)
+    terms_reviewed_date: "2026-09-14"
+    api_base_url: "https://publicreporting.cftc.gov"
+    endpoint: null
+    permitted_project_use: "public U.S. government data; used here as leakage-safe candidate positioning features for pre-auction forecasting research"
+    attribution_requirement: "cite 'U.S. Commodity Futures Trading Commission' as the source"
+    expected_data_frequency: "weekly"
+    expected_observation_timing: "positions as of Tuesday close"
+    expected_publication_timing: "normally released the following Friday at 3:30 PM Eastern; CFTC itself states no complete historical list of release dates exists -- see artifacts/cftc_positioning_data_quality.md for verified vs. inferred release dates, including documented multi-week delays (2018-2019 shutdown, 2023 ION incident, 2025 shutdown)"
+    timezone: "America/New_York (Eastern)"
+    schema: "see artifacts/cftc_positioning_data_quality.md for the verified TFF Futures Only field list"
+    units: "contracts (position counts) -- NOT dollar/notional/duration exposure"
+    missing_value_convention: "documented in artifacts/cftc_positioning_data_quality.md"
+    revision_behavior: "CFTC may issue corrected reports; not deeply investigated this phase -- see limitations in artifacts/cftc_positioning_data_quality.md"
+    historical_coverage: "full retained source history from 2006-06-13 onward (verified via live query); the auction modeling sample itself remains 2010-01-01 onward -- see the Phase 4 acceptance review, issue 8, for why the source lookback was extended without changing the modeling sample's own start date"
+    known_breaks: "documented release-calendar exceptions -- see artifacts/cftc_positioning_data_quality.md"
+    point_in_time_availability_rule: "release-date-based, distinguishing verified actual dates from a conservative inferred rule -- see docs/point_in_time_rules.md"
+    retrieval_metadata_requirements:
+      - request_url
+      - query_parameters
+      - retrieval_timestamp_utc
+      - http_status
+      - response_format
+      - row_count
+      - dataset_date_range
+      - checksum_sha256
+      - schema_or_code_version
+    credential_requirements: "none (public data; Socrata API works without a token at low request volumes)"
+    authorized_in_current_phase: true
+    notes: >
+      Phase 4B. TFF Futures Only report specifically -- never silently mixed
+      with Legacy COT, disaggregated physical-commodity COT, or futures+options
+      combined data. See artifacts/cftc_positioning_data_quality.md for the
+      contract-code registry and release-calendar investigation.
+
+  philadelphia_fed_rtdsm:
+    display_name: "Federal Reserve Bank of Philadelphia — Real-Time Data Set for Macroeconomists (RTDSM)"
+    source_owner: "Federal Reserve Bank of Philadelphia"
+    official_url: "https://www.philadelphiafed.org/surveys-and-data/real-time-data-research/real-time-data-set-for-macroeconomists"
+    official_landing_page: "https://www.philadelphiafed.org/surveys-and-data/real-time-data-research/real-time-data-set-for-macroeconomists"
+    documentation_url: "https://www.philadelphiafed.org/surveys-and-data/real-time-data-research/real-time-data-set-full-time-series-history"
+    terms_or_usage_policy_url: "https://www.philadelphiafed.org/about-us/privacy-notice"
+    terms_reviewed_date: "2026-09-11"
+    api_base_url: null
+    endpoint: null
+    permitted_project_use: >
+      The Philadelphia Fed describes RTDSM as intended for macroeconomic
+      research, verifying empirical results, policy analysis, and forecasting.
+      Used here for exactly that: leakage-safe, vintage-correct macro candidate
+      features for pre-auction forecasting research. This is documentation of
+      stated purpose, not a legal opinion -- see docs/data_source_governance.md.
+    attribution_requirement: "cite the Federal Reserve Bank of Philadelphia and the recommended Croushore and Stark RTDSM reference (see docs/data_source_governance.md); do not imply Federal Reserve Board endorsement"
+    expected_data_frequency: "monthly or quarterly per series (native frequency); vintages published on a documented schedule"
+    expected_observation_timing: "each series has its own native observation period (month or quarter)"
+    expected_publication_timing: "each vintage has its own real-world release/availability date -- see artifacts/rtdsm_macro_vintage_data_quality.md for the per-variable availability-precision investigation"
+    timezone: "not intraday-sensitive at monthly/quarterly frequency; dates only"
+    schema: "wide vintage-history workbooks (observation periods x vintage columns); see artifacts/rtdsm_macro_vintage_data_quality.md for per-variable schema notes"
+    units: "varies by series -- see the variable registry in artifacts/rtdsm_macro_vintage_data_quality.md"
+    missing_value_convention: "blank Excel cell, read as NaN -- never a sentinel string, never imputed/forward-filled/zero-filled; see artifacts/rtdsm_macro_vintage_data_quality.md"
+    revision_behavior: "the entire point of RTDSM: preserves every historical vintage/revision of each series, by design"
+    historical_coverage: "varies by series -- see the variable registry"
+    known_breaks: "base-period and definitional changes vary by series -- see the variable registry"
+    point_in_time_availability_rule: >
+      Two documented precision tiers: a verified exact collection day (15th
+      of the middle month of the quarter, for quarterly-vintage RUC) vs. a
+      per-variable conservative bound for each monthly-vintage variable
+      (ROUTPUT/PCPI/IPT/EMPLOY/HSTARTS), each cited to that variable's own
+      releasing institution (BEA/BLS/Federal Reserve Board/Census-HUD) --
+      never one variable's evidence borrowed for another (Phase 4
+      acceptance review, issue 3). CPI (quarterly-vintage) was replaced
+      with PCPI (monthly-vintage) for materially better point-in-time
+      granularity (issue 4). See docs/point_in_time_rules.md and
+      artifacts/rtdsm_macro_vintage_data_quality.md.
+    retrieval_metadata_requirements:
+      - request_url
+      - retrieval_timestamp_utc
+      - http_status
+      - content_type
+      - file_size
+      - series_identifier
+      - vintage_range
+      - observation_range
+      - checksum_sha256
+      - schema_or_code_version
+    credential_requirements: "none (public downloads, no API key)"
+    authorized_in_current_phase: true
+    notes: >
+      Phase 4C. Used INSTEAD of FRED/ALFRED -- see docs/data_source_governance.md
+      for why FRED is excluded this phase and why RTDSM is a separate,
+      independently-authorized source, not a substitute chosen to route around
+      that exclusion.
+
+  cftc_commitments_of_traders:
+    display_name: "CFTC Commitments of Traders (Historical) -- superseded entry"
+    official_url: "https://www.cftc.gov/MarketReports/CommitmentsofTraders/HistoricalCompressed/index.htm"
+    documentation_url: "https://www.cftc.gov/MarketReports/CommitmentsofTraders/index.htm"
+    api_base_url: null
+    endpoint: null
+    expected_data_frequency: "weekly"
+    expected_observation_timing: "positions as of Tuesday close"
+    expected_publication_timing: "released the following Friday; must be joined by release date, not the Tuesday observation date, per docs/point_in_time_rules.md"
+    retrieval_metadata_requirements:
+      - request_url
+      - query_parameters
+      - retrieval_timestamp_utc
+      - http_status
+      - response_format
+      - row_count
+      - dataset_date_range
+      - checksum_sha256
+      - schema_or_code_version
+    credential_requirements: "none (public bulk files)"
+    authorized_in_current_phase: false
+    notes: >
+      Superseded by cftc_tff_futures_only (Phase 4B), which specifies the exact
+      report type (Traders in Financial Futures, Futures Only) rather than the
+      generic "Commitments of Traders" umbrella this placeholder named. Kept,
+      unauthorized, for historical planning traceability only.
+
+  alfred_fred_point_in_time:
+    display_name: "ALFRED/FRED point-in-time (real-time vintage) macroeconomic data"
+    official_url: "https://fred.stlouisfed.org/docs/api/fred/alfred.html"
+    documentation_url: "https://fred.stlouisfed.org/docs/api/fred/alfred.html"
+    api_base_url: "https://api.stlouisfed.org/fred"
+    endpoint: null
+    terms_or_usage_policy_url: "https://fred.stlouisfed.org/legal/"
+    terms_reviewed_date: "2026-09-11"
+    expected_data_frequency: "varies by series (e.g. monthly, quarterly)"
+    expected_observation_timing: "each series value has its own observation date, distinct from when a given vintage/revision of it was published"
+    expected_publication_timing: "each revision (vintage) has its own realtime_start/realtime_end publication window; must use the vintage available at the forecast cutoff, per docs/point_in_time_rules.md"
+    retrieval_metadata_requirements:
+      - request_url
+      - query_parameters
+      - retrieval_timestamp_utc
+      - http_status
+      - response_format
+      - row_count
+      - dataset_date_range
+      - checksum_sha256
+      - schema_or_code_version
+    credential_requirements: "would require a free FRED API key -- NOT requested, NOT stored, NOT read from the environment even if present. FRED_API_KEY must never be used by this project's code."
+    authorized_in_current_phase: false
+    permitted_project_use: "NONE -- see docs/data_source_governance.md"
+    notes: >
+      EXCLUDED PENDING WRITTEN CLARIFICATION (as of the Phase 4
+      source-replacement decision, 2026-09-11): the current FRED Services terms appear incompatible
+      with this project's future machine-learning work, and no written
+      clarification has been obtained. This is a source-governance decision,
+      not a claim that FRED use would be illegal. No FRED-derived data exists
+      anywhere in this repository. Phase 4C uses the Federal Reserve Bank of
+      Philadelphia's RTDSM instead -- see docs/data_source_governance.md and
+      the philadelphia_fed_rtdsm entry above. This entry is retained,
+      unauthorized, purely for historical planning traceability; do not ingest
+      from it, and do not read FRED_API_KEY from the environment under any
+      circumstance.
+
+  future_candidate_sources:
+    display_name: "Other possible later official sources (not yet scoped in detail)"
+    official_url: null
+    documentation_url: null
+    api_base_url: null
+    endpoint: null
+    expected_data_frequency: "varies"
+    expected_observation_timing: "varies"
+    expected_publication_timing: "varies"
+    retrieval_metadata_requirements: []
+    credential_requirements: "unknown"
+    authorized_in_current_phase: false
+    notes: >
+      Placeholder covering: NY Fed repo operations, NY Fed reverse-repo
+      operations, SOMA holdings, Treasury issuance data, Treasury
+      debt-outstanding data, and Federal Reserve policy rates. Treasury
+      daily yield-curve rates, CFTC TFF futures positioning, and
+      Philadelphia Fed RTDSM macro vintages have each graduated to their
+      own registry entry above (Phase 4A/4B/4C). Each remaining
+      candidate will get its own registry entry with a verified URL and
+      timing model once its phase arrives.

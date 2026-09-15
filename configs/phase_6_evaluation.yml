@@ -1,0 +1,311 @@
+# Phase 6 evaluation protocol -- the single machine-readable source of
+# truth for the chronological rolling-origin backtest. Frozen BEFORE
+# any out-of-sample score was computed; see the generated artifacts/phase_6_evaluation_
+# protocol.md for the human-readable explanation and
+# treasury_auction_stress.evaluation for the code that reads this file
+# directly (never a second, hand-copied set of constants).
+#
+# docs/project_rules.md rule this file exists to satisfy: "Never optimize the
+# starting year or fold schedule against test performance" and "Do not
+# select a single winner by repeatedly inspecting the same outer test
+# years and changing the protocol." Every value below was chosen from
+# the actual Phase 5 sample's coverage (verified: 1,279 rows, 2010-01-12
+# through 2026-09-10) and this project's own stated modeling-sequence
+# plan (docs/project_plan.md) -- never from a peek at any model's
+# out-of-sample error.
+
+metadata:
+  document: "Phase 6 evaluation protocol"
+  status: "implemented, pending independent acceptance review"
+  frozen_before_scoring: true
+  auction_key_definition: "same as Phase 5: cusip + '_' + auction_date.date().isoformat()"
+
+targets:
+  primary: primary_dealer_share
+  secondary:
+    - direct_bidder_share
+    - indirect_bidder_share
+    - bid_to_cover_ratio
+  # Valid-range clipping policy per target. Applied only to the
+  # OPERATIONAL forecast; the unclipped value is always retained
+  # alongside it in the prediction artifact. Chosen before any model
+  # was fit; never revisited after seeing a result.
+  clipping:
+    primary_dealer_share: {lower: 0.0, upper: 1.0}
+    direct_bidder_share: {lower: 0.0, upper: 1.0}
+    indirect_bidder_share: {lower: 0.0, upper: 1.0}
+    bid_to_cover_ratio: {lower: 0.0, upper: null}  # a ratio has no natural upper bound
+
+cutoff_views:
+  - announcement
+  - pre_auction
+
+fold_schedule:
+  design: "annual, expanding-window, rolling-origin"
+  initial_training_span: {start: "2010-01-01", end: "2014-12-31"}
+  first_test_year: 2015
+  # Verified directly against data/processed/feature_matrix_announcement.parquet
+  # at protocol-freeze time: complete calendar years 2015-2025 inclusive
+  # (11 folds), plus one provisional partial year.
+  complete_test_years: [2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025]
+  provisional_test_year: 2026
+  provisional_year_reason: >
+    The current calendar year is incomplete as of this protocol's
+    freeze date (2026-09-12); its fold is reported separately, labeled
+    "provisional", and is never pooled into a "complete-year" headline
+    number.
+
+label_availability:
+  rule: "result_safe_available_date <= fold_fit_origin"
+  fold_fit_origin_rule: "min(announcement_cutoff_date) over the fold's own test-year auctions, computed once per fold and reused for BOTH cutoff views"
+  result_safe_available_date_rule: >
+    Treasury's Fiscal Data API does not publish a verified auction
+    RESULT release timestamp (only auction_date and announcemt_date
+    exist on the source schema -- see docs/point_in_time_rules.md and
+    docs/data_dictionary.md). No historical intraday or even
+    date-level release time for auction RESULTS specifically was found
+    in this project's official-source review. This project therefore
+    uses a disclosed, conservative, date-level PROXY, newly constructed
+    for Phase 6 (never present in any Phase 5 artifact):
+    result_safe_available_date = next_full_business_day_after(auction_date),
+    using the same shared time_utils.next_full_business_day_after rule
+    already used for every other Phase 3/4/5 publication-timing
+    decision. This is conservative because real auction results are
+    published same-day, within hours of the auction closing (verified
+    from Treasury's own results press releases, which are dated the
+    auction date itself) -- so this proxy can only make training data
+    LOOK less available than it really was, never more.
+  candidate_training_pool_rule: "auction_date.dt.year < fold_test_year (guarantees train/test disjointness), THEN filtered by the availability rule above"
+  same_day_grouping: >
+    No special-case code is needed to keep same-announcement-date
+    auctions grouped at a fold boundary: because fold_fit_origin is the
+    MINIMUM announcement_cutoff_date over the whole test year, and a
+    result can only be safely available strictly after its own
+    auction's own announcement date, every test-year row's own result
+    is provably later than fold_fit_origin (see
+    treasury_auction_stress.evaluation.timing module docstring for the
+    proof) -- so the availability rule alone can never admit a
+    same-day sibling of a test auction into that fold's training pool.
+    tests/test_phase6_timing.py proves this directly against a
+    constructed Dec-30/Dec-31/Jan-2 shared-announcement-date fixture.
+  frozen_annual_models: >
+    Every model (baseline or fitted regression) is fit ONCE per fold,
+    using only that fold's eligible training pool, and used to predict
+    every auction in that fold's test year without ever being updated
+    using an outcome from within that same test year. No online/
+    adaptive updating is implemented in Phase 6 (explicit Phase 7 work).
+
+refit_frequency: "once per fold (annual)"
+
+predictor_tiers:
+  structural_only:
+    description: "The 9 core auction-structure features only -- no dealer/rates/CFTC/RTDSM data."
+    source_family: auction_structure
+    columns:
+      - tenor
+      - is_reopening
+      - offering_amt
+      - log_offering_amt
+      - days_announcement_to_auction
+      - auction_month
+      - auction_quarter
+      - auction_day_of_week
+      - announcement_day_of_week
+  core:
+    description: "All 36 Phase 5 core-tier predictors (configs/phase_5_features.yml default_tier: core)."
+    source: "treasury_auction_stress.features.feature_manifest.literal_predictor_names(tier='core')"
+  extended_sensitivity:
+    description: >
+      Core + extended (71 total Phase 5 predictors) -- a single,
+      pre-specified SENSITIVITY experiment, run only for Ridge, never
+      presented as the primary structural or core comparison, and never
+      used to pick which tier "wins" by outer-test performance.
+    source: "treasury_auction_stress.features.feature_manifest.literal_predictor_names() (core + extended)"
+
+missing_predictor_handling:
+  rule: >
+    Any predictor column that is 100% missing within a given fold's
+    training pool is dropped for that fold (both train and test), and
+    the drop is recorded in that fold's manifest -- never imputed as if
+    a later regime's values could have informed an earlier fold's fit.
+    A verified real case (not just a synthetic fixture): dealer_long_
+    short_imbalance and its 52-week z-score are 100% missing in every
+    training pool through the 2021 test fold (the underlying fine
+    long-maturity dealer buckets do not exist before 2022-01-05).
+  partial_missing_predictor_handling: >
+    A predictor with SOME (not all) missing training values is
+    imputed with the training fold's own median (scikit-learn
+    SimpleImputer, strategy="median", refit per fold, with
+    add_indicator=True so a missingness flag is itself available to
+    the linear models) -- never the full dataset's median.
+  categorical_encoding: >
+    tenor is one-hot encoded (scikit-learn OneHotEncoder,
+    handle_unknown="ignore") inside each fold's own pipeline, fit on
+    that fold's training categories only -- an unseen category at test
+    time (e.g. a tenor never seen in training) is encoded as all-zero
+    rather than raising or leaking a category vocabulary from the
+    future. is_reopening is cast to {0,1} directly (already binary).
+
+hyperparameter_selection:
+  scheme: "single chronological inner holdout, nested inside the outer fold's own training pool"
+  inner_holdout_rule: >
+    The outer training pool's own most recent complete calendar year is
+    held out as the inner validation set; every earlier year in the
+    pool is the inner training set. Both the inner training and inner
+    validation sets are built using the exact same fold-construction
+    function as the outer folds (treasury_auction_stress.evaluation.
+    timing.build_fold), so the inner split also respects result
+    availability and same-day auction grouping.
+  minimum_history_for_inner_cv: "at least 2 distinct calendar years AND at least 50 eligible rows in the resulting inner-training pool"
+  fallback_if_insufficient_history:
+    ridge_alpha: 1.0
+    elastic_net_alpha: 0.1
+    elastic_net_l1_ratio: 0.5
+  selection_metric: >
+    MAE on the SAME target the model being tuned is fitting, in that
+    target's own raw (unscaled) units, computed on the inner
+    validation set only. For the primary model this literally is MAE
+    on primary_dealer_share -- the concrete instance that motivated
+    this rule. It does NOT mean "always score every model against
+    primary_dealer_share regardless of which target it forecasts":
+    scoring a bid_to_cover_ratio candidate model's predictions against
+    primary_dealer_share's actual values would not even be mechanically
+    coherent (different units, different economic quantity), and
+    forcing every secondary-target model to reuse the primary target's
+    hyperparameters (rather than tuning its own) would be a materially
+    different, undocumented design this project never built or tested.
+    An acceptance review of an earlier draft of this document flagged
+    this exact ambiguity -- the literal earlier wording ("MAE on
+    primary_dealer_share") failed to say what should happen for
+    secondary-target models, and the implementation (correctly, and
+    unchanged by that review) tunes each target's model against ITS OWN
+    inner-validation MAE. This entry was rewritten to describe that
+    behavior accurately, not to describe a different behavior the code
+    would then need to change to match.
+  grids:
+    ridge:
+      alpha: [0.1, 1.0, 10.0, 100.0]
+    elastic_net:
+      alpha: [0.001, 0.01, 0.1, 1.0]
+      l1_ratio: [0.1, 0.5, 0.9]
+  never_selected_on_outer_test: "alpha, l1_ratio, imputation values, scaling, category vocabulary, and model/feature selection are all fit strictly inside the outer training pool -- the outer test year is never inspected before or during fitting."
+
+fallback_rules:
+  tenor_reopening_group_fallback: "(tenor, is_reopening) group mean -> tenor-only mean -> global training mean, in that order, whichever is the first group with at least 1 training-eligible observation"
+  recent_history_insufficient_same_tenor_history: "if fewer than recent_history.n_lookback eligible same-tenor training rows exist, use however many exist; if zero exist for that tenor, fall back to the global training mean"
+
+models:
+  - id: baseline_global_mean
+    label: "Global historical mean"
+    family: baseline
+    description: "Single constant: the training-eligible pool's own mean of the target. No tenor/reopening structure."
+  - id: baseline_tenor_mean
+    label: "Tenor-specific historical mean"
+    family: baseline
+    description: "One constant per tenor: that tenor's training-eligible mean. Falls back to the global mean for a tenor absent from training."
+  - id: baseline_tenor_reopening_mean
+    label: "Tenor x reopening historical mean"
+    family: baseline
+    description: "One constant per (tenor, is_reopening) pair, with the fallback hierarchy declared above for sparse/unseen groups. Pre-declared as the STRONG baseline for benchmark-relative R2."
+    is_strong_baseline: true
+  - id: baseline_recent_history
+    label: "Recent-history same-tenor baseline"
+    family: baseline
+    recent_history:
+      n_lookback: 8
+    description: >
+      Mean of the n_lookback most recent training-eligible same-tenor
+      outcomes as of the fold's own fit origin -- a fixed,
+      pre-specified count, computed once per fold and frozen for the
+      whole test year (never updated auction-by-auction within the
+      year).
+  - id: structural_ridge
+    label: "Ridge, structural-only tier"
+    family: linear
+    estimator: ridge
+    predictor_tier: structural_only
+    tuned: true
+  - id: core_ridge
+    label: "Ridge, core tier"
+    family: linear
+    estimator: ridge
+    predictor_tier: core
+    tuned: true
+  - id: core_elastic_net
+    label: "Elastic net, core tier"
+    family: linear
+    estimator: elastic_net
+    predictor_tier: core
+    tuned: true
+  - id: extended_ridge_sensitivity
+    label: "Ridge, core+extended tier (sensitivity experiment)"
+    family: linear
+    estimator: ridge
+    predictor_tier: extended_sensitivity
+    tuned: true
+    sensitivity_only: true
+
+excluded_from_phase_6:
+  - "gradient boosting"
+  - "neural networks"
+  - "quantile regression"
+  - "hierarchical Bayesian models"
+  - "regime-switching models"
+  - "Dealer Absorption Surprise / stress-event classification metrics (see dealer_absorption_surprise_treatment below)"
+
+dealer_absorption_surprise_treatment:
+  decision: "not scored as a Phase 6 headline metric"
+  reason: >
+    docs/target_specification.md's regime feature
+    (dealer_share_regime_trailing_mean, in
+    treasury_auction_stress.features.dealer_absorption) sorts by
+    auction_date and shifts within tenor -- "earlier in auction order"
+    is not equivalent to "publicly available by this auction's own
+    forecast cutoff" once same-day auctions and date-level result
+    timing are accounted for. A rigorous, cross-fitted, leakage-safe
+    construction (each prior-outcome regime value built only from
+    results safely available by ITS OWN forecast cutoff, a
+    DealerAbsorptionSurpriseModel/StressThreshold fit strictly inside
+    each outer training fold, and a cross-fitted or walk-forward
+    construction to avoid the in-sample-residual variance-understatement
+    problem docs/project_rules.md flags) is feasible in principle but is
+    substantial additional modeling machinery in its own right --
+    doing it hastily to fill a report section would risk exactly the
+    leaky-or-misleading score docs/project_rules.md prohibits. This is deferred,
+    explicitly, to Phase 7. Phase 6's mandatory, fully-delivered
+    evaluation is the continuous primary_dealer_share forecast above.
+  what_was_still_done_this_phase: >
+    treasury_auction_stress.evaluation.dealer_absorption_audit
+    documents the exact leakage risk in add_regime_feature and proves
+    (tests/test_phase6_dealer_absorption_audit.py) that naively reusing
+    it inside a Phase 6 fold without cross-fitting would let a training
+    fold's regime feature depend on same-tenor auctions whose own
+    results are not yet safely available by that fold's fit origin --
+    the concrete evidence for why Section 8's rigor bar was not met
+    this phase.
+
+pre_auction_information_updates_table:
+  policy: >
+    data/processed/pre_auction_information_updates.parquet is treated
+    as EXPLANATORY AUDIT MATERIAL only. It is never added as a feature
+    to the pre-auction model while comparing it against an
+    announcement model that lacks equivalent advance specification. A
+    separately named sensitivity model exists (extended_ridge_sensitivity
+    reuses only Phase 5's own pre-auction-cutoff-native columns, never
+    this table) -- if a future phase wants to test the update table
+    itself as a feature source, it must be pre-registered as its own,
+    separately named model.
+
+subgroups:
+  - by_tenor
+  - by_reopening_status
+  - by_test_year
+  - by_provisional_partial_year
+
+headline_metrics:
+  - mae_pp
+  - median_ae_pp
+  - rmse_pp
+  - bias_pp
+  - r2_vs_strong_baseline
+  - r2_vs_fold_own_mean

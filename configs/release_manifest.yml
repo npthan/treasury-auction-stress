@@ -1,0 +1,56 @@
+# Public-release manifest and accepted-artifact checksums.
+#
+# Machine-readable source of truth for (1) what the public snapshot's
+# tracked tree is supposed to contain, by top-level location, and
+# (2) the SHA-256 digests of the accepted, generated artifacts that the
+# committed dashboard aggregate and the pinned headline numbers derive
+# from. Enforced by tests/test_release_manifest.py -- if a tracked file
+# is added or removed, or a directory that must stay untracked (e.g.
+# reports/ or artifacts/) gains a tracked file, that test fails until
+# this manifest is deliberately updated.
+#
+# Generated reports/figures are intentionally untracked: generation
+# CLIs write them to the gitignored artifacts/ directory on demand --
+# see docs/reproducibility.md.
+
+tracked_file_counts:
+  src: 97
+  tests: 92
+  docs: 9
+  configs: 7
+  dashboard: 4
+  data: 3          # the three .gitkeep placeholders only
+  ".github": 1
+  top_level: 6     # LICENSE, README.md, pyproject.toml, uv.lock, .gitignore, .python-version
+  total: 219
+
+must_stay_untracked_prefixes:
+  - reports/
+  - artifacts/
+  - data/raw/      # except the .gitkeep placeholder
+  - data/interim/  # except the .gitkeep placeholder
+  - data/processed/  # except the .gitkeep placeholder
+  - .venv/
+
+# SHA-256 of the one committed generated artifact. The dashboard reads
+# exactly this file; if it changes, the change must be deliberate and
+# this digest updated in the same commit.
+committed_artifact_checksums:
+  dashboard/data/phase8_dashboard_data.json: "cb2b904bbb47775fb9d245f261c58b5ed9ef46083cbd8ac214f0a4c11b1e6283"
+
+# SHA-256 digests of the accepted (gitignored, locally-generated)
+# pipeline artifacts the headline results derive from, recorded when
+# each phase's results were accepted. A local regeneration can be
+# checked against these to confirm no accepted numerical result
+# changed. They are verification records, not files in this tree.
+accepted_local_artifact_checksums:
+  phase_5_feature_matrix:
+    announcement_matrix: "bbf66d41328eb92083805c25505c2be7fc0d5e327230a85ca6c21087772469ce"
+    pre_auction_matrix: "c8cde12ae32f742a37933952c0309965338d7d1e700576a5bdb274dbcdf22dbe"
+    target_table: "790ef5a8b9f6d427e6de4e869137368d3a9010575d1e193fbff67f2736fbc82b"
+    announcement_audit_table: "8f29415bbdfd71d268e711b65b41359deab6fe6582aa2715ea0c2acf3503bc3c"
+    pre_auction_audit_table: "7efe3c7d09333ee94424073034c8a0e1b639a2b5e6dfa9c124ab6ec87e246164"
+    pre_auction_update_table: "7a6d338214668bf50537f4c05307d972a67e22aa96dca3a8d1484e4f6188a191"
+  phase_7_accepted_predictions:
+    point_predictions_content_digest: "a218de9f6c764146fa7e106eda0cd2ab9f74d232d05b7096f0b16c248a422ba6"
+    probabilistic_predictions_content_digest: "93d5078be9630c30b591313df60f5c05ab97792a3058d934e4599aa053f40707"
